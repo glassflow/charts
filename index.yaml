@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  glassflow-etl:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-06-16T17:01:51.859373+02:00"
+    description: A Helm chart for Kubernetes
+    digest: b7104be10b7c6bd1c2d6c02a95a11b9dc0ed9890df6979b2553ee90afb994c78
+    name: glassflow-etl
+    type: application
+    urls:
+    - https://glassflow.github.io/charts/glassflow-etl-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-06-16T17:01:51.858971+02:00"
