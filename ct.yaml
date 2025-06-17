@@ -1,0 +1,8 @@
+remote: origin
+target-branch: main
+debug: true
+charts:
+  - charts/glassflow-etl
+check-version-increment: false
+helm-extra-args: --timeout 5m
+chart-repos: []
