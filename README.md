@@ -6,7 +6,7 @@ This repository contains the official Helm charts for Glassflow components.
 
 | Chart | Description |
 |-------|-------------|
-| [glassflow-etl](./charts/glassflow-etl) | Glassflow ETL component for data processing and transformation |
+| [glassflow-etl](./charts/glassflow-etl) | Glassflow ETL component for deduplication and joins of kafka streams to clickhouse |
 
 ## Usage
 
@@ -17,21 +17,24 @@ helm repo add glassflow https://glassflow.github.io/charts
 helm repo update
 ```
 
-### Install a Chart
+### Install the Chart
 
 ```bash
-# First, add the NATS repository (required for dependencies)
-helm repo add nats https://nats-io.github.io/k8s/helm/charts/
-helm repo update
-
 # Install glassflow-etl (this will also install NATS)
-helm install my-etl glassflow/glassflow-etl --create-namespace
+helm install glassflow glassflow/glassflow-etl --create-namespace --namespace glassflow
 ```
+This installs the GlassFlow Helm chart into the `glassflow` namespace. The `--create-namespace` flag ensures the namespace is created if it doesn’t already exist.
+
 
 ### List Available Charts
 
 ```bash
 helm search repo glassflow
+```
+The output should be like: 
+```
+NAME                   	CHART VERSION	APP VERSION	DESCRIPTION                
+glassflow/glassflow-etl	0.1.1        	1.1.12     	A Helm chart for Kubernetes
 ```
 
 ## Development

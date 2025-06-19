@@ -12,23 +12,11 @@ This Helm chart deploys the Glassflow ETL application on Kubernetes.
 ## Installation
 
 ### Option 1: Using the packaged chart
-
-1. Add the NATS Helm repository:
 ```bash
-helm repo add nats https://nats-io.github.io/k8s/helm/charts/
+helm repo add glassflow https://glassflow.github.io/charts
 helm repo update
-```
-
-2. Install the chart:
-
-To an existing namespace:
-```bash
-helm install glassflow-etl glassflow-etl-0.1.0.tgz --namespace <namespace>
-```
-
-To a new namespace (will be created automatically):
-```bash
-helm install glassflow-etl glassflow-etl-0.1.0.tgz --namespace <namespace> --create-namespace
+# Install glassflow-etl
+helm install glassflow glassflow/glassflow-etl
 ```
 
 ### Option 2: Using the chart source
@@ -46,12 +34,6 @@ helm dependency update
 
 3. Install the chart:
 
-To an existing namespace:
-```bash
-helm install glassflow-etl . --namespace <namespace>
-```
-
-To a new namespace (will be created automatically):
 ```bash
 helm install glassflow-etl . --namespace <namespace> --create-namespace
 ```
@@ -63,16 +45,14 @@ The following table lists the configurable parameters of the chart and their def
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `nats.enabled` | Enable NATS | `true` |
-| `nats.jetstream.enabled` | Enable JetStream | `true` |
-| `nats.jetstream.fileStorage.enabled` | Enable file storage for JetStream | `true` |
-| `nats.jetstream.fileStorage.size` | Size of JetStream storage | `20Gi` |
-| `nats.jetstream.fileStorage.storageClass` | Storage class for JetStream | `standard-rwo` |
+| `nats.config.jetstream.enabled` | Enable JetStream | `true` |
+| `nats.config.jetstream.fileStorage.enabled` | Enable file storage for JetStream | `true` |
+| `nats.config.jetstream.fileStorage.size` | Size of JetStream storage | `10Gi` |
+| `nats.config.jetstream.fileStorage.storageClass` | Storage class for JetStream | `""` |
 | `nats.config.cluster.enabled` | Enable NATS clustering | `false` |
 | `nats.config.cluster.replicas` | Number of NATS replicas (min 2 for JetStream) | `3` |
-| `ui.replicaCount` | Number of UI pods | `1` |
-| `app.replicaCount` | Number of app pods | `1` |
-| `ingress.enabled` | Enable ingress | `true` |
-| `ingress.hosts[0].host` | Ingress hostname | `etl.glassflow.xyz` |
+| `nats.config.jetstream.memStorage.enabled` | Enable memory storage for JetStream | `false` |
+| `ingress.enabled` | Enable ingress | `false` |
 
 For more configuration options, see `values.yaml`.
 
