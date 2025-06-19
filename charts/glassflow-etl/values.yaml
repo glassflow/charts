@@ -51,7 +51,7 @@ nats:
   enabled: true
   config:
     cluster:
-      enabled: false
+      enabled: true
       port: 6222
       # must be 2 or higher when jetstream is enabled
       replicas: 3 

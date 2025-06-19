@@ -49,7 +49,7 @@ The following table lists the configurable parameters of the chart and their def
 | `nats.config.jetstream.fileStorage.enabled` | Enable file storage for JetStream | `true` |
 | `nats.config.jetstream.fileStorage.size` | Size of JetStream storage | `10Gi` |
 | `nats.config.jetstream.fileStorage.storageClass` | Storage class for JetStream | `""` |
-| `nats.config.cluster.enabled` | Enable NATS clustering | `false` |
+| `nats.config.cluster.enabled` | Enable NATS clustering | `true` |
 | `nats.config.cluster.replicas` | Number of NATS replicas (min 2 for JetStream) | `3` |
 | `nats.config.jetstream.memStorage.enabled` | Enable memory storage for JetStream | `false` |
 | `ingress.enabled` | Enable ingress | `false` |
