@@ -24,7 +24,7 @@ app:
       cpu: "500m"
     limits:
       memory: "2Gi"
-      cpu: "1000m"
+      cpu: "750m"
   # Application specific settings
   config:
     # Add your application specific configuration here
@@ -41,10 +41,10 @@ ui:
   resources:
     requests:
       memory: "512Mi"
-      cpu: "250m"
+      cpu: "100m"
     limits:
       memory: "1Gi"
-      cpu: "500m"
+      cpu: "200m"
 
 # NATS configuration
 nats:
@@ -65,11 +65,11 @@ nats:
         storageClass: ""    
     resources:
       requests:
-        memory: "512Mi"
-        cpu: "250m"
-      limits:
         memory: "1Gi"
         cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "750m"
 
 # Service configuration
 service:
