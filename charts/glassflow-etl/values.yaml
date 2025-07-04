@@ -49,6 +49,8 @@ ui:
 # NATS configuration
 nats:
   enabled: true
+  # Node selector for NATS pods
+  nodeSelector: {}
   config:
     cluster:
       enabled: true
@@ -113,8 +115,12 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
-# Node selector
+# Node selector for main application pods (UI and app)
 nodeSelector: {}
+# Example:
+# nodeSelector:
+#   kubernetes.io/os: linux
+#   node-role.kubernetes.io/worker: "true"
 
 # Tolerations
 tolerations: []

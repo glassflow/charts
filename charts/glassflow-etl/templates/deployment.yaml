@@ -17,6 +17,10 @@ spec:
         {{- include "clickhouse-etl.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: ui
     spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: ui
           image: "{{ .Values.ui.image.repository }}:{{ .Values.ui.image.tag }}"
@@ -47,7 +51,11 @@ spec:
       labels:
         {{- include "clickhouse-etl.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: app
-    spec:      
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: app
           image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
