@@ -28,7 +28,7 @@ app:
   # Application specific settings
   config:
     # Add your application specific configuration here
-    logLevel: "info"
+    logLevel: "DEBUG"  # or "INFO", "WARN", "ERROR", etc.
     environment: "production"
 
 # UI settings
@@ -49,8 +49,7 @@ ui:
 # NATS configuration
 nats:
   enabled: true
-  # Node selector for NATS pods
-  nodeSelector: {}
+  # Node selector for NATS should be set under podTemplate.merge.spec.nodeSelector  
   config:
     cluster:
       enabled: true

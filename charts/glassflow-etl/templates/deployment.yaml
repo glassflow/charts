@@ -69,6 +69,8 @@ spec:
               value: "/tmp/logs/glassflow"
             - name: GLASSFLOW_NATS_SERVER
               value: "nats://{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222"
+            - name: GLASSFLOW_LOG_LEVEL
+              value: {{ .Values.app.config.logLevel | default "DEBUG" | quote }}
           {{- with .Values.app.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
