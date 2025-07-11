@@ -58,12 +58,16 @@ nats:
       replicas: 3 
     jetstream:
       enabled: true
-      memStorage:
+      memoryStore:
         enabled: false
-      fileStorage:
+        maxSize: 1Gi
+      fileStore:
         enabled: true
-        size: 10Gi
-        storageClass: ""    
+        dir: /data
+        pvc:
+          enabled: true
+          size: 10Gi
+          storageClassName: ""
     resources:
       requests:
         memory: "1Gi"
