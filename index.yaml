@@ -3,6 +3,22 @@ entries:
   glassflow-etl:
   - apiVersion: v2
     appVersion: 1.1.12
+    created: "2025-07-11T08:16:20.34103075Z"
+    dependencies:
+    - alias: nats
+      condition: nats.enabled
+      name: nats
+      repository: https://nats-io.github.io/k8s/helm/charts/
+      version: 1.3.6
+    description: A Helm chart for Kubernetes
+    digest: a7f9f64ad581c7344dd9e1df8cacdd129efb00d45ea7ae7a4b491bed9c1ee3a0
+    name: glassflow-etl
+    type: application
+    urls:
+    - https://github.com/glassflow/charts/releases/download/glassflow-etl-0.1.6/glassflow-etl-0.1.6.tgz
+    version: 0.1.6
+  - apiVersion: v2
+    appVersion: 1.1.12
     created: "2025-07-08T15:58:12.453365119Z"
     dependencies:
     - alias: nats
@@ -91,4 +107,4 @@ entries:
     urls:
     - https://glassflow.github.io/charts/glassflow-etl-0.1.0.tgz
     version: 0.1.0
-generated: "2025-07-08T15:58:12.453394023Z"
+generated: "2025-07-11T08:16:20.341064123Z"
