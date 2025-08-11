@@ -4,7 +4,7 @@ metadata:
   name: {{ .Release.Name }}-ui
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "clickhouse-etl.labels" . | nindent 4 }}
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -13,16 +13,16 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "clickhouse-etl.selectorLabels" . | nindent 4 }}
+    {{- include "glassflow-etl.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: ui
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-app
+  name: {{ .Release.Name }}-api
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "clickhouse-etl.labels" . | nindent 4 }}
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -31,5 +31,5 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "clickhouse-etl.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: app
+    {{- include "glassflow-etl.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api

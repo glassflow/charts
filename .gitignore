@@ -14,9 +14,10 @@ Thumbs.db
 *.swo
 
 # Helm specific
-charts/*/charts/
+# charts/*/charts/
 charts/*/tmp/
 charts/*/charts.lock
+*.tgz
 
 # Temporary files
 *.tmp

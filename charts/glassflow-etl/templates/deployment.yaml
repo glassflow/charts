@@ -4,17 +4,17 @@ metadata:
   name: {{ .Release.Name }}-ui
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "clickhouse-etl.labels" . | nindent 4 }}
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.ui.replicaCount }}
   selector:
     matchLabels:
-      {{- include "clickhouse-etl.selectorLabels" . | nindent 6 }}
+      {{- include "glassflow-etl.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: ui
   template:
     metadata:
       labels:
-        {{- include "clickhouse-etl.selectorLabels" . | nindent 8 }}
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: ui
     spec:
       {{- with .Values.nodeSelector }}
@@ -31,36 +31,36 @@ spec:
           {{- end }}
           env:
             - name: NEXT_PUBLIC_API_URL
-              value: "http://{{ .Release.Name }}-app.{{ .Release.Namespace }}.svc.cluster.local:8080"
+              value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8080"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-app
+  name: {{ .Release.Name }}-api
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "clickhouse-etl.labels" . | nindent 4 }}
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.app.replicaCount }}
+  replicas: {{ .Values.api.replicaCount }}
   selector:
     matchLabels:
-      {{- include "clickhouse-etl.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: app
+      {{- include "glassflow-etl.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
   template:
     metadata:
       labels:
-        {{- include "clickhouse-etl.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: app
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
     spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: app
-          image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
-          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
-          {{- with .Values.app.resources }}
+        - name: api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          {{- with .Values.api.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -70,18 +70,23 @@ spec:
             - name: GLASSFLOW_NATS_SERVER
               value: "nats://{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222"
             - name: GLASSFLOW_LOG_LEVEL
-              value: {{ .Values.app.config.logLevel | default "DEBUG" | quote }}
-          {{- with .Values.app.livenessProbe }}
+              value: {{ .Values.api.config.logLevel | default "DEBUG" | quote }}
+            - name: GLASSFLOW_RUN_LOCAL
+              value: "false"
+            - name: GLASSFLOW_K8S_NAMESPACE
+              value: {{ .Release.Namespace }}
+          {{- with .Values.api.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.app.readinessProbe }}
+          {{- with .Values.api.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: logs
               mountPath: /tmp/logs/glassflow
+      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
       volumes:
         - name: logs
           emptyDir: {}

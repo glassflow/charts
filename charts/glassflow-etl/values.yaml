@@ -11,12 +11,12 @@ global:
   # Global storage class
   storageClass: ""
 
-# Application settings
-app:
+# API settings
+api:
   replicaCount: 1
   image:
-    repository: glassflow/clickhouse-etl-be
-    tag: stable
+    repository: ghcr.io/glassflow/glassflow-etl-be
+    tag: glassflow-cloud
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -25,9 +25,9 @@ app:
     limits:
       memory: "2Gi"
       cpu: "750m"
-  # Application specific settings
+  # API specific settings
   config:
-    # Add your application specific configuration here
+    # Add your API specific configuration here
     logLevel: "DEBUG"  # or "INFO", "WARN", "ERROR", etc.
     environment: "production"
 
@@ -35,8 +35,8 @@ app:
 ui:
   replicaCount: 1
   image:
-    repository: glassflow/clickhouse-etl-fe
-    tag: stable
+    repository: ghcr.io/glassflow/glassflow-etl-fe
+    tag: glassflow-cloud
     pullPolicy: Always
   resources:
     requests:
@@ -45,6 +45,13 @@ ui:
     limits:
       memory: "1Gi"
       cpu: "200m"
+
+glassflowOperator:
+  enabled: true
+
+  nats:
+    serviceName: ""  # This will be the NATS service name from ETL chart
+    # namespace: ""  # Use ETL chart's namespace"
 
 # NATS configuration
 nats:
@@ -70,11 +77,11 @@ nats:
           storageClassName: ""
     resources:
       requests:
-        memory: "1Gi"
+        memory: "2Gi"
         cpu: "500m"
       limits:
-        memory: "2Gi"
-        cpu: "750m"
+        memory: "4Gi"
+        cpu: "1000m"
 
 # Service configuration
 service:
