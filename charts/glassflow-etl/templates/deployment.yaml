@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "glassflow-etl.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.ui.replicaCount }}
+  replicas: {{ .Values.ui.replicas }}
   selector:
     matchLabels:
       {{- include "glassflow-etl.selectorLabels" . | nindent 6 }}
@@ -41,7 +41,7 @@ metadata:
   labels:
     {{- include "glassflow-etl.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.api.replicaCount }}
+  replicas: {{ .Values.api.replicas }}
   selector:
     matchLabels:
       {{- include "glassflow-etl.selectorLabels" . | nindent 6 }}

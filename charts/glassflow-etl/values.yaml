@@ -13,11 +13,13 @@ global:
 
 # API settings
 api:
-  replicaCount: 1
+  replicas: 1
+
   image:
     repository: ghcr.io/glassflow/glassflow-etl-be
     tag: glassflow-cloud
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
+  
   resources:
     requests:
       memory: "1Gi"
@@ -25,6 +27,7 @@ api:
     limits:
       memory: "2Gi"
       cpu: "750m"
+  
   # API specific settings
   config:
     # Add your API specific configuration here
@@ -33,11 +36,13 @@ api:
 
 # UI settings
 ui:
-  replicaCount: 1
+  replicas: 1
+
   image:
     repository: ghcr.io/glassflow/glassflow-etl-fe
     tag: glassflow-cloud
     pullPolicy: Always
+  
   resources:
     requests:
       memory: "512Mi"
@@ -46,12 +51,42 @@ ui:
       memory: "1Gi"
       cpu: "200m"
 
-glassflowOperator:
-  enabled: true
+# Operator settings
+operator:
+  replicas: 1
 
+  manager:
+    image:
+      repository: ghcr.io/glassflow/glassflow-etl-k8s-operator
+      tag: main
+      pullPolicy: Always
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+
+  # Pass through NATS configuration, you can ignore this if nats.enabled is true
   nats:
-    serviceName: ""  # This will be the NATS service name from ETL chart
-    # namespace: ""  # Use ETL chart's namespace"
+    # Service name for NATS deployment
+    # Defaults to glassflow-etl-nats
+    serviceName: ""
+
+    # Namespace for NATS deployment
+    # Defaults to the namespace of the ETL chart
+    namespace: ""
+  
+  # Metrics service for the operator
+  metricsService:
+    ports:
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    type: ClusterIP
 
 # NATS configuration
 nats:
@@ -75,6 +110,7 @@ nats:
           enabled: true
           size: 100Gi
           storageClassName: ""
+    
     resources:
       requests:
         memory: "2Gi"

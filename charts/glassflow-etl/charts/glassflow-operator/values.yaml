@@ -8,6 +8,7 @@ controllerManager:
     image:
       repository: ghcr.io/glassflow/glassflow-etl-k8s-operator
       tag: main
+      pullPolicy: Always
     resources:
       limits:
         cpu: 500m
