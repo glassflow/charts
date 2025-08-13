@@ -58,10 +58,10 @@ The following table lists the configurable parameters of the chart and their def
 | `api.image.repository` | API image repository | `ghcr.io/glassflow/glassflow-etl-be` |
 | `api.image.tag` | API image tag | `glassflow-cloud` |
 | `api.image.pullPolicy` | API image pull policy | `Always` |
-| `api.resources.requests.memory` | API memory requests | `"1Gi"` |
-| `api.resources.requests.cpu` | API CPU requests | `"500m"` |
-| `api.resources.limits.memory` | API memory limits | `"2Gi"` |
-| `api.resources.limits.cpu` | API CPU limits | `"750m"` |
+| `api.resources.requests.memory` | API memory requests | `"500Mi"` |
+| `api.resources.requests.cpu` | API CPU requests | `"250m"` |
+| `api.resources.limits.memory` | API memory limits | `"1Gi"` |
+| `api.resources.limits.cpu` | API CPU limits | `"500m"` |
 | `api.config.logLevel` | API log level | `"DEBUG"` |
 | `api.config.environment` | API environment | `"production"` |
 
@@ -78,25 +78,26 @@ The following table lists the configurable parameters of the chart and their def
 | `ui.resources.limits.memory` | UI memory limits | `"1Gi"` |
 | `ui.resources.limits.cpu` | UI CPU limits | `"200m"` |
 
-### Operator Configuration
+### GlassFlow Operator Configuration
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `operator.replicas` | Number of operator replicas | `1` |
-| `operator.manager.image.repository` | Operator image repository | `ghcr.io/glassflow/glassflow-etl-k8s-operator` |
-| `operator.manager.image.tag` | Operator image tag | `main` |
-| `operator.manager.image.pullPolicy` | Operator image pull policy | `Always` |
-| `operator.manager.resources.limits.cpu` | Operator CPU limits | `500m` |
-| `operator.manager.resources.limits.memory` | Operator memory limits | `128Mi` |
-| `operator.manager.resources.requests.cpu` | Operator CPU requests | `10m` |
-| `operator.manager.resources.requests.memory` | Operator memory requests | `64Mi` |
-| `operator.nats.serviceName` | NATS service name for operator | `""` |
-| `operator.nats.namespace` | NATS namespace for operator | `""` |
-| `operator.metricsService.ports[0].name` | Metrics service port name | `https` |
-| `operator.metricsService.ports[0].port` | Metrics service port | `8443` |
-| `operator.metricsService.ports[0].protocol` | Metrics service protocol | `TCP` |
-| `operator.metricsService.ports[0].targetPort` | Metrics service target port | `8443` |
-| `operator.metricsService.type` | Metrics service type | `ClusterIP` |
+| `glassflow-operator.controllerManager.replicas` | Number of operator replicas | `1` |
+| `glassflow-operator.controllerManager.manager.image.repository` | Operator image repository | `ghcr.io/glassflow/glassflow-etl-k8s-operator` |
+| `glassflow-operator.controllerManager.manager.image.tag` | Operator image tag | `main` |
+| `glassflow-operator.controllerManager.manager.image.pullPolicy` | Operator image pull policy | `Always` |
+| `glassflow-operator.controllerManager.manager.resources.limits.cpu` | Operator CPU limits | `500m` |
+| `glassflow-operator.controllerManager.manager.resources.limits.memory` | Operator memory limits | `128Mi` |
+| `glassflow-operator.controllerManager.manager.resources.requests.cpu` | Operator CPU requests | `10m` |
+| `glassflow-operator.controllerManager.manager.resources.requests.memory` | Operator memory requests | `64Mi` |
+| `glassflow-operator.controllerManager.serviceAccount.annotations` | Service account annotations | `{}` |
+| `glassflow-operator.nats.serviceName` | NATS service name for operator | `""` |
+| `glassflow-operator.nats.namespace` | NATS namespace for operator | `""` |
+| `glassflow-operator.metricsService.ports[0].name` | Metrics service port name | `https` |
+| `glassflow-operator.metricsService.ports[0].port` | Metrics service port | `8443` |
+| `glassflow-operator.metricsService.ports[0].protocol` | Metrics service protocol | `TCP` |
+| `glassflow-operator.metricsService.ports[0].targetPort` | Metrics service target port | `8443` |
+| `glassflow-operator.metricsService.type` | Metrics service type | `ClusterIP` |
 
 ### NATS Configuration
 

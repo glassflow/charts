@@ -22,11 +22,11 @@ api:
   
   resources:
     requests:
+      memory: "500Mi"
+      cpu: "250m"
+    limits:
       memory: "1Gi"
       cpu: "500m"
-    limits:
-      memory: "2Gi"
-      cpu: "750m"
   
   # API specific settings
   config:
@@ -52,33 +52,36 @@ ui:
       cpu: "200m"
 
 # Operator settings
-operator:
-  replicas: 1
+glassflow-operator:
 
-  manager:
-    image:
-      repository: ghcr.io/glassflow/glassflow-etl-k8s-operator
-      tag: main
-      pullPolicy: Always
+  controllerManager:
+    replicas: 1
 
-    resources:
-      limits:
-        cpu: 500m
-        memory: 128Mi
-      requests:
-        cpu: 10m
-        memory: 64Mi
+    manager:
+      image:
+        repository: ghcr.io/glassflow/glassflow-etl-k8s-operator
+        tag: main
+        pullPolicy: Always
+
+      resources:
+        limits:
+          cpu: 500m
+          memory: 128Mi
+        requests:
+          cpu: 10m
+          memory: 64Mi
+
+    serviceAccount:
+      annotations: {}
 
   # Pass through NATS configuration, you can ignore this if nats.enabled is true
   nats:
-    # Service name for NATS deployment
-    # Defaults to glassflow-etl-nats
-    serviceName: ""
+    # Service name for NATS deployment (defaults to {{ .Release.Name }}-nats)
+    # serviceName: ""
 
-    # Namespace for NATS deployment
-    # Defaults to the namespace of the ETL chart
-    namespace: ""
-  
+    # Namespace for NATS deployment (defaults to {{ .Release.Namespace }})
+    # namespace: ""
+    
   # Metrics service for the operator
   metricsService:
     ports:
