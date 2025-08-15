@@ -46,9 +46,7 @@ The following table lists the configurable parameters of the chart and their def
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `global.imageRegistry` | Global image registry | `""` |
-| `global.imagePullSecrets` | Global image pull secrets | `[]` |
-| `global.storageClass` | Global storage class | `""` |
+| `global.imageRegistry` | Global image registry (prepended to all image repositories) | `""` |
 
 ### API Configuration
 
@@ -58,12 +56,14 @@ The following table lists the configurable parameters of the chart and their def
 | `api.image.repository` | API image repository | `ghcr.io/glassflow/glassflow-etl-be` |
 | `api.image.tag` | API image tag | `glassflow-cloud` |
 | `api.image.pullPolicy` | API image pull policy | `Always` |
-| `api.resources.requests.memory` | API memory requests | `"500Mi"` |
-| `api.resources.requests.cpu` | API CPU requests | `"250m"` |
-| `api.resources.limits.memory` | API memory limits | `"1Gi"` |
-| `api.resources.limits.cpu` | API CPU limits | `"500m"` |
-| `api.config.logLevel` | API log level | `"DEBUG"` |
-| `api.config.environment` | API environment | `"production"` |
+| `api.resources.requests.memory` | API memory requests | `"100Mi"` |
+| `api.resources.requests.cpu` | API CPU requests | `"100m"` |
+| `api.resources.limits.memory` | API memory limits | `"200Mi"` |
+| `api.resources.limits.cpu` | API CPU limits | `"250m"` |
+| `api.config.logLevel` | API log level | `"INFO"` |
+| `api.service.type` | API service type | `ClusterIP` |
+| `api.service.port` | API service port | `8080` |
+| `api.service.targetPort` | API service target port | `8080` |
 
 ### UI Configuration
 
@@ -77,6 +77,9 @@ The following table lists the configurable parameters of the chart and their def
 | `ui.resources.requests.cpu` | UI CPU requests | `"100m"` |
 | `ui.resources.limits.memory` | UI memory limits | `"1Gi"` |
 | `ui.resources.limits.cpu` | UI CPU limits | `"200m"` |
+| `ui.service.type` | UI service type | `ClusterIP` |
+| `ui.service.port` | UI service port | `8080` |
+| `ui.service.targetPort` | UI service target port | `8080` |
 
 ### GlassFlow Operator Configuration
 
@@ -119,13 +122,6 @@ The following table lists the configurable parameters of the chart and their def
 | `nats.config.resources.requests.cpu` | NATS CPU requests | `"500m"` |
 | `nats.config.resources.limits.memory` | NATS memory limits | `"4Gi"` |
 | `nats.config.resources.limits.cpu` | NATS CPU limits | `"1000m"` |
-
-### Service Configuration
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `service.type` | Service type | `ClusterIP` |
-| `service.port` | Service port | `80` |
 
 ### Ingress Configuration
 
@@ -190,7 +186,7 @@ helm install glassflow-etl glassflow-etl-0.1.0.tgz --namespace <namespace> -f cu
 Or by setting individual values:
 
 ```bash
-helm install glassflow-etl glassflow-etl-0.1.0.tgz --namespace <namespace> --set ui.replicaCount=2
+helm install glassflow-etl glassflow-etl-0.1.0.tgz --namespace <namespace> --set ui.replicas=2
 ```
 
 ## Important Notes
@@ -214,4 +210,9 @@ helm install glassflow-etl glassflow-etl-0.1.0.tgz --namespace <namespace> --set
 4. Resource Management:
    - Adjust resource requests and limits based on your workload
    - Monitor resource usage and adjust accordingly
-   - Consider using autoscaling for production workloads 
+   - Consider using autoscaling for production workloads
+
+5. Service Configuration:
+   - UI and API services are configured independently
+   - Each component can have different service types and ports
+   - Global image registry and pull secrets apply to all components

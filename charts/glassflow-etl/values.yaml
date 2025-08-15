@@ -9,14 +9,6 @@
 global: 
   # Global image registry - if set, will be prepended to all image repositories
   imageRegistry: ""
-  
-  # Global image pull secrets - list of secret names for pulling images from private registries
-  # Example: ["my-registry-secret"]
-  imagePullSecrets: []
-  
-  # Global storage class - default storage class for all PVCs if not specified elsewhere
-  # Example: "fast-ssd" or "standard"
-  storageClass: ""
 
 # =============================================================================
 # API COMPONENT CONFIGURATION
@@ -39,18 +31,23 @@ api:
   resources:
     # Minimum resources required by the API pods
     requests:
-      memory: "500Mi"  # Memory request - adjust based on your workload
-      cpu: "250m"      # CPU request - 250 millicores = 0.25 CPU cores
+      memory: "100Mi"  # Memory request - adjust based on your workload
+      cpu: "100m"      # CPU request - 250 millicores = 0.25 CPU cores
     # Maximum resources the API pods can use
     limits:
-      memory: "1Gi"    # Memory limit - adjust based on your workload
-      cpu: "500m"      # CPU limit - 500 millicores = 0.5 CPU cores
+      memory: "200Mi"    # Memory limit - adjust based on your workload
+      cpu: "250m"      # CPU limit - 500 millicores = 0.5 CPU cores
   
   # API specific settings
   config:
     # Log level for the API service: DEBUG, INFO, WARN, ERROR
     # Use DEBUG for development, INFO or WARN for production
     logLevel: "INFO"
+
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
 
 # =============================================================================
 # UI COMPONENT CONFIGURATION
@@ -79,6 +76,11 @@ ui:
     limits:
       memory: "1Gi"    # Memory limit - adjust based on your workload
       cpu: "200m"      # CPU limit - 200 millicores = 0.2 CPU cores
+
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
 
 # =============================================================================
 # GLASSFLOW OPERATOR CONFIGURATION
@@ -204,17 +206,6 @@ nats:
         cpu: "1000m"     # CPU limit - 1000 millicores = 1.0 CPU cores
 
 # =============================================================================
-# SERVICE CONFIGURATION
-# =============================================================================
-# Kubernetes service configuration for exposing the application
-service:
-  # Service type: ClusterIP, NodePort, or LoadBalancer
-  # ClusterIP is recommended for internal access
-  type: ClusterIP
-  # Port the service listens on
-  port: 80
-
-# =============================================================================
 # INGRESS CONFIGURATION
 # =============================================================================
 # Ingress configuration for external access to the application
@@ -267,7 +258,7 @@ securityContext: {}
 # =============================================================================
 # SERVICE ACCOUNT CONFIGURATION
 # =============================================================================
-# Service account configuration for the application
+# Service account configuration for the application (UI and API)
 serviceAccount:
   # Create a new service account for the application (UI and API)
   # Set to false if you want to use an existing service account
@@ -345,22 +336,3 @@ autoscaling:
   # Target memory utilization percentage for scaling (commented out)
   # Uncomment and set a value to enable memory-based scaling
   # targetMemoryUtilizationPercentage: 80
-
-# =============================================================================
-# VOLUME CONFIGURATION
-# =============================================================================
-# Additional volumes and volume mounts configuration
-
-# Additional volumes to create
-# Example:
-# - name: config-volume
-#   configMap:
-#     name: app-config
-volumes: []
-
-# Additional volume mounts for containers
-# Example:
-# - name: config-volume
-#   mountPath: "/etc/app/config"
-#   readOnly: true
-volumeMounts: []

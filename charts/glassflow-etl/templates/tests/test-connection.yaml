@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "glassflow-etl.fullname" . }}:{{ .Values.service.port }}']
+      args: ['{{ include "glassflow-etl.fullname" . }}:{{ .Values.api.service.port }}']
   restartPolicy: Never
