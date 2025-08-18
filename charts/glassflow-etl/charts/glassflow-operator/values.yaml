@@ -33,8 +33,5 @@ metricsService:
   type: ClusterIP
 
 nats:
-  # Defaults to {{ .Release.Name }}-nats
-  # serviceName: ""
-
-  # Defaults to {{ .Release.Namespace }}
-  # namespace: ""
+  address: ""
+  componentAddress: ""

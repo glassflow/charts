@@ -124,15 +124,13 @@ glassflow-operator:
   # These settings are used when the operator needs to connect to NATS
   # You can ignore this section if nats.enabled is true (default)
   nats:
-    # Service name for NATS deployment
-    # Defaults to {{ .Release.Name }}-nats if not specified
-    # Example: "my-nats-service"
-    serviceName: ""
+    # NATS address for the operator to connect to
+    # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local if not specified
+    address: ""
 
-    # Namespace for NATS deployment
-    # Defaults to the namespace of the ETL chart if not specified
-    # Example: "nats-system"
-    namespace: ""
+    # NATS component address for the operator to connect to
+    # Defaults to the nats address if not specified
+    componentAddress: ""
     
   # Metrics service for the operator
   metricsService:

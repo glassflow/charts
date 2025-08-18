@@ -94,8 +94,8 @@ The following table lists the configurable parameters of the chart and their def
 | `glassflow-operator.controllerManager.manager.resources.requests.cpu` | Operator CPU requests | `10m` |
 | `glassflow-operator.controllerManager.manager.resources.requests.memory` | Operator memory requests | `64Mi` |
 | `glassflow-operator.controllerManager.serviceAccount.annotations` | Service account annotations | `{}` |
-| `glassflow-operator.nats.serviceName` | NATS service name for operator | `""` |
-| `glassflow-operator.nats.namespace` | NATS namespace for operator | `""` |
+| `glassflow-operator.nats.address` | NATS address for operator connection | `""` (defaults to `{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local`) |
+| `glassflow-operator.nats.componentAddress` | NATS component address for operator | `""` (defaults to NATS address) |
 | `glassflow-operator.metricsService.ports[0].name` | Metrics service port name | `https` |
 | `glassflow-operator.metricsService.ports[0].port` | Metrics service port | `8443` |
 | `glassflow-operator.metricsService.ports[0].protocol` | Metrics service protocol | `TCP` |

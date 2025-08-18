@@ -30,8 +30,8 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --health-probe-bind-address=:8081
-        - --nats-addr={{ (.Values.nats).serviceName | default (printf "%s-nats" .Release.Name) }}.{{ (.Values.nats).namespace | default .Release.Namespace }}.svc.cluster.local
-        - --nats-component-addr={{ (.Values.nats).serviceName | default (printf "%s-nats" .Release.Name) }}.{{ (.Values.nats).namespace | default .Release.Namespace }}.svc.cluster.local
+        - --nats-addr={{ include "glassflow-operator.natsAddress" . }}
+        - --nats-component-addr={{ include "glassflow-operator.natsComponentAddress" . }}
         command:
         - /manager
         env:
