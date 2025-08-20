@@ -17,7 +17,7 @@ Thumbs.db
 # charts/*/charts/
 charts/*/tmp/
 charts/*/charts.lock
-*.tgz
+nats-*.tgz
 
 # Temporary files
 *.tmp
