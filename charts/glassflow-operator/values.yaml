@@ -1,5 +1,9 @@
 controllerManager:
   manager:
+    args:
+    - --metrics-bind-address=:8443
+    - --leader-elect
+    - --health-probe-bind-address=:8081
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -8,7 +12,6 @@ controllerManager:
     image:
       repository: ghcr.io/glassflow/glassflow-etl-k8s-operator
       tag: main
-      pullPolicy: Always
     resources:
       limits:
         cpu: 500m
@@ -31,7 +34,3 @@ metricsService:
     protocol: TCP
     targetPort: 8443
   type: ClusterIP
-
-nats:
-  address: ""
-  componentAddress: ""
