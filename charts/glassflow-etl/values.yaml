@@ -49,6 +49,17 @@ api:
     port: 8080
     targetPort: 8080
 
+  # Environment variables for the API service
+  # Supported variables:
+  # - GLASSFLOW_LOG_FILE_PATH: Path to the log file (Default: /tmp/logs/glassflow)
+  # - GLASSFLOW_NATS_SERVER: NATS server address (Default: nats://{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222)
+  # - GLASSFLOW_LOG_LEVEL: Log level (Default: INFO)
+  # Example:
+  # env:
+  #   - name: GLASSFLOW_LOG_LEVEL
+  #     value: "DEBUG"
+  env: {}
+
 # =============================================================================
 # UI COMPONENT CONFIGURATION
 # =============================================================================

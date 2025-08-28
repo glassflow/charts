@@ -106,11 +106,15 @@ spec:
             - name: GLASSFLOW_NATS_SERVER
               value: "nats://{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222"
             - name: GLASSFLOW_LOG_LEVEL
-              value: {{ .Values.api.config.logLevel | default "DEBUG" | quote }}
+              value: {{ .Values.api.config.logLevel | default "INFO" | quote }}
             - name: GLASSFLOW_RUN_LOCAL
               value: "false"
             - name: GLASSFLOW_K8S_NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- range $key, $value := .Values.api.env }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+            {{- end }}
           {{- with .Values.api.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
