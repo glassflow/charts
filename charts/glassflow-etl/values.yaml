@@ -37,12 +37,6 @@ api:
     limits:
       memory: "200Mi"    # Memory limit - adjust based on your workload
       cpu: "250m"      # CPU limit - 500 millicores = 0.5 CPU cores
-  
-  # API specific settings
-  config:
-    # Log level for the API service: DEBUG, INFO, WARN, ERROR
-    # Use DEBUG for development, INFO or WARN for production
-    logLevel: "INFO"
 
   service:
     type: ClusterIP
