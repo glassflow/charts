@@ -106,7 +106,7 @@ spec:
             - name: GLASSFLOW_NATS_SERVER
               value: "nats://{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222"
             - name: GLASSFLOW_LOG_LEVEL
-              value: {{ .Values.api.config.logLevel | default "INFO" | quote }}
+              value: "INFO"
             - name: GLASSFLOW_RUN_LOCAL
               value: "false"
             - name: GLASSFLOW_K8S_NAMESPACE
