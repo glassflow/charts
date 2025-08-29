@@ -51,8 +51,6 @@ spec:
                   stream:
                     type: string
                   type:
-                    enum:
-                    - temporal
                     type: string
                 required:
                 - enabled
