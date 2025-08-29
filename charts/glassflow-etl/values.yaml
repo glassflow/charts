@@ -87,6 +87,15 @@ ui:
     port: 8080
     targetPort: 8080
 
+  # Environment variables for the UI service
+  # Supported variables:
+  # - NEXT_PUBLIC_API_URL: API URL for the application
+  # Example:
+  # env:
+  #   - name: NEXT_PUBLIC_API_URL
+  #     value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8080"
+  env: {}
+
 # =============================================================================
 # GLASSFLOW OPERATOR CONFIGURATION
 # =============================================================================
