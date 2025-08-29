@@ -40,8 +40,8 @@ api:
 
   service:
     type: ClusterIP
-    port: 8080
-    targetPort: 8080
+    port: 8081
+    targetPort: 8081
 
   # Environment variables for the API service
   # Supported variables:
