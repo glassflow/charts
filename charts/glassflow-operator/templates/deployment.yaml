@@ -37,6 +37,12 @@ spec:
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
+        - name: INGESTOR_IMAGE
+          value: {{ .Values.componentImages.ingestor.repository }}:{{ .Values.componentImages.ingestor.tag }}
+        - name: JOIN_IMAGE
+          value: {{ .Values.componentImages.join.repository }}:{{ .Values.componentImages.join.tag }}
+        - name: SINK_IMAGE
+          value: {{ .Values.componentImages.sink.repository }}:{{ .Values.componentImages.sink.tag }}
         image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.controllerManager.manager.image.pullPolicy }}
         livenessProbe:
