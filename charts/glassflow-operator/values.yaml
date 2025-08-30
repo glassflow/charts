@@ -24,6 +24,20 @@ controllerManager:
   serviceAccount:
     annotations: {}
 kubernetesClusterDomain: cluster.local
+
+# Component image configurations
+componentImages:
+  ingestor:
+    repository: ghcr.io/glassflow/glassflow-etl-ingestor
+    tag: glassflow-cloud
+  join:
+    repository: ghcr.io/glassflow/glassflow-etl-join
+    tag: glassflow-cloud
+  sink:
+    repository: ghcr.io/glassflow/glassflow-etl-sink
+    tag: glassflow-cloud
+
+
 metricsService:
   ports:
   - name: https
