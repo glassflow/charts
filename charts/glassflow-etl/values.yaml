@@ -134,6 +134,23 @@ glassflow-operator:
       # Useful for IAM roles, OIDC providers, etc.
       annotations: {}
 
+  # Component image configurations
+  componentImages:
+    # Ingestor component docker image
+    ingestor:
+      repository: ghcr.io/glassflow/glassflow-etl-ingestor
+      tag: glassflow-cloud
+    
+    # Join component docker image
+    join:
+      repository: ghcr.io/glassflow/glassflow-etl-join
+      tag: glassflow-cloud
+    
+    # Sink component docker image
+    sink:
+      repository: ghcr.io/glassflow/glassflow-etl-sink
+      tag: glassflow-cloud
+  
   # NATS configuration for the operator
   # These settings are used when the operator needs to connect to NATS
   # You can ignore this section if nats.enabled is true (default)
