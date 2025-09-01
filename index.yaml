@@ -123,4 +123,19 @@ entries:
     urls:
     - https://glassflow.github.io/charts/glassflow-etl-0.1.0.tgz
     version: 0.1.0
-generated: "2025-08-23T07:21:35.165339251Z"
+  glassflow-operator:
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2025-09-01T17:04:47.130386147Z"
+    description: GlassFlow Operator chart
+    digest: 056881ed0c4588034f6d229709e1e70cdd992548134fd7fc733f28b006c22b8d
+    maintainers:
+    - email: support@glassflow.dev
+      name: Glassflow
+      url: https://glassflow.dev
+    name: glassflow-operator
+    type: application
+    urls:
+    - https://github.com/glassflow/charts/releases/download/glassflow-operator-0.1.0/glassflow-operator-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-09-01T17:04:47.130411855Z"
