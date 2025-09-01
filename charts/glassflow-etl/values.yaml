@@ -6,7 +6,7 @@
 # GLOBAL SETTINGS
 # =============================================================================
 # Global settings that apply across all components of the chart
-global: 
+global:
   # Global image registry - if set, will be prepended to all image repositories
   imageRegistry: ""
 
@@ -23,10 +23,10 @@ api:
     # Docker image repository for the GlassFlow ETL backend
     repository: ghcr.io/glassflow/glassflow-etl-be
     # Image tag/version to deploy
-    tag: main
+    tag: stable
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: Always
-  
+
   # Resource requirements and limits for the API pods
   resources:
     # Minimum resources required by the API pods
@@ -67,10 +67,10 @@ ui:
     # Docker image repository for the GlassFlow ETL frontend
     repository: ghcr.io/glassflow/glassflow-etl-fe
     # Image tag/version to deploy
-    tag: main
+    tag: stable
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: Always
-  
+
   # Resource requirements and limits for the UI pods
   resources:
     # Minimum resources required by the UI pods
@@ -139,18 +139,18 @@ glassflow-operator:
     # Ingestor component docker image
     ingestor:
       repository: ghcr.io/glassflow/glassflow-etl-ingestor
-      tag: main
-    
+      tag: stable
+
     # Join component docker image
     join:
       repository: ghcr.io/glassflow/glassflow-etl-join
-      tag: main
-    
+      tag: stable
+
     # Sink component docker image
     sink:
       repository: ghcr.io/glassflow/glassflow-etl-sink
-      tag: main
-  
+      tag: stable
+
   # NATS configuration for the operator
   # These settings are used when the operator needs to connect to NATS
   # You can ignore this section if nats.enabled is true (default)
@@ -162,7 +162,7 @@ glassflow-operator:
     # NATS component address for the operator to connect to
     # Defaults to the nats address if not specified
     componentAddress: ""
-    
+
   # Metrics service for the operator
   metricsService:
     # Service ports configuration
@@ -182,7 +182,7 @@ nats:
   # Enable or disable NATS deployment
   # Set to false if you want to use an external NATS instance
   enabled: true
-  
+
   # NATS configuration settings
   # Note: Node selector for NATS should be set under podTemplate.merge.spec.nodeSelector
   config:
@@ -194,20 +194,20 @@ nats:
       port: 6222
       # Number of NATS replicas
       # IMPORTANT: Must be 2 or higher when JetStream is enabled
-      replicas: 3 
-    
+      replicas: 3
+
     # JetStream configuration for persistent messaging
     jetstream:
       # Enable JetStream for persistent message storage
       enabled: true
-      
+
       # Memory store configuration (fast but non-persistent)
       memoryStore:
         # Enable memory-based storage (not recommended for production)
         enabled: false
         # Maximum size of memory store
         maxSize: 1Gi
-      
+
       # File store configuration (persistent but slower)
       fileStore:
         # Enable file-based storage (recommended for production)
@@ -222,7 +222,7 @@ nats:
           size: 100Gi
           # Storage class for the PVC (uses global.storageClass if empty)
           storageClassName: ""
-    
+
     # Resource requirements and limits for NATS pods
     resources:
       # Minimum resources required by NATS pods
@@ -242,15 +242,15 @@ ingress:
   # Enable or disable ingress
   # Set to true to expose the application externally
   enabled: false
-  
+
   # Ingress class name (required for Kubernetes 1.18+)
   # Example: "nginx", "traefik", "istio"
   ingressClassName: ""
-  
+
   # Annotations for the ingress resource
   # Useful for SSL termination, rate limiting, etc.
   annotations: {}
-  
+
   # Host configurations for the ingress
   # Example:
   # - host: "etl.example.com"
@@ -260,7 +260,7 @@ ingress:
   #       serviceName: "glassflow-etl-ui"
   #       servicePort: 8080
   hosts: []
-  
+
   # TLS configuration for HTTPS
   # Example:
   # - hosts:
@@ -292,15 +292,15 @@ serviceAccount:
   # Create a new service account for the application (UI and API)
   # Set to false if you want to use an existing service account
   create: true
-  
+
   # Automatically mount the service account's API credentials
   # Useful for accessing the Kubernetes API from within pods
   automount: true
-  
+
   # Annotations to add to the service account
   # Useful for IAM roles, OIDC providers, etc.
   annotations: {}
-  
+
   # Name of the service account to use
   # If not set and create is true, a name is generated using the fullname template
   # Example: "glassflow-etl-sa"
@@ -351,17 +351,17 @@ affinity: {}
 autoscaling:
   # Enable or disable autoscaling
   enabled: false
-  
+
   # Minimum number of replicas when autoscaling
   minReplicas: 1
-  
+
   # Maximum number of replicas when autoscaling
   maxReplicas: 5
-  
+
   # Target CPU utilization percentage for scaling
   # HPA will scale up when CPU usage exceeds this percentage
   targetCPUUtilizationPercentage: 80
-  
+
   # Target memory utilization percentage for scaling (commented out)
   # Uncomment and set a value to enable memory-based scaling
   # targetMemoryUtilizationPercentage: 80
