@@ -4,26 +4,44 @@ metadata:
   name: {{ .Release.Name }}-ui
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "clickhouse-etl.labels" . | nindent 4 }}
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.ui.replicaCount }}
+  replicas: {{ .Values.ui.replicas }}
   selector:
     matchLabels:
-      {{- include "clickhouse-etl.selectorLabels" . | nindent 6 }}
+      {{- include "glassflow-etl.selectorLabels" . | nindent 6 }}
+      {{- with .Values.podLabels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
       app.kubernetes.io/component: ui
   template:
     metadata:
       labels:
-        {{- include "clickhouse-etl.selectorLabels" . | nindent 8 }}
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: ui
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
       containers:
         - name: ui
-          image: "{{ .Values.ui.image.repository }}:{{ .Values.ui.image.tag }}"
+          image: "{{ .Values.global.imageRegistry | default "" }}{{ .Values.ui.image.repository }}:{{ .Values.ui.image.tag }}"
           imagePullPolicy: {{ .Values.ui.image.pullPolicy }}
           {{- with .Values.ui.resources }}
           resources:
@@ -31,36 +49,60 @@ spec:
           {{- end }}
           env:
             - name: NEXT_PUBLIC_API_URL
-              value: "http://{{ .Release.Name }}-app.{{ .Release.Namespace }}.svc.cluster.local:8080/api/v1"
+              value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8081"
+            - name: NEXT_PUBLIC_IN_DOCKER
+              value: "false"
+            {{- range $key, $value := .Values.ui.env }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+            {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-app
+  name: {{ .Release.Name }}-api
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "clickhouse-etl.labels" . | nindent 4 }}
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.app.replicaCount }}
+  replicas: {{ .Values.api.replicas }}
   selector:
     matchLabels:
-      {{- include "clickhouse-etl.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: app
+      {{- include "glassflow-etl.selectorLabels" . | nindent 6 }}
+      {{- with .Values.podLabels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      app.kubernetes.io/component: api
   template:
     metadata:
       labels:
-        {{- include "clickhouse-etl.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: app
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
       containers:
-        - name: app
-          image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
-          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
-          {{- with .Values.app.resources }}
+        - name: api
+          image: "{{ .Values.global.imageRegistry | default "" }}{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          {{- with .Values.api.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -70,18 +112,29 @@ spec:
             - name: GLASSFLOW_NATS_SERVER
               value: "nats://{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222"
             - name: GLASSFLOW_LOG_LEVEL
-              value: {{ .Values.app.config.logLevel | default "DEBUG" | quote }}
-          {{- with .Values.app.livenessProbe }}
+              value: "INFO"
+            - name: GLASSFLOW_RUN_LOCAL
+              value: "false"
+            - name: GLASSFLOW_K8S_NAMESPACE
+              value: {{ .Release.Namespace }}
+            {{- range $key, $value := .Values.api.env }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- with .Values.api.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.app.readinessProbe }}
+          {{- with .Values.api.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
           volumeMounts:
             - name: logs
               mountPath: /tmp/logs/glassflow
+      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
       volumes:
         - name: logs
           emptyDir: {}

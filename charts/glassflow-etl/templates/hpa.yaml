@@ -2,14 +2,14 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "clickhouse-etl.fullname" . }}
+  name: {{ include "glassflow-etl.fullname" . }}
   labels:
-    {{- include "clickhouse-etl.labels" . | nindent 4 }}
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "clickhouse-etl.fullname" . }}
+    name: {{ include "glassflow-etl.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:
