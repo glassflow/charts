@@ -29,13 +29,13 @@ kubernetesClusterDomain: cluster.local
 componentImages:
   ingestor:
     repository: ghcr.io/glassflow/glassflow-etl-ingestor
-    tag: glassflow-cloud
+    tag: main
   join:
     repository: ghcr.io/glassflow/glassflow-etl-join
-    tag: glassflow-cloud
+    tag: main
   sink:
     repository: ghcr.io/glassflow/glassflow-etl-sink
-    tag: glassflow-cloud
+    tag: main
 
 
 metricsService:

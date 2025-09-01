@@ -23,7 +23,7 @@ api:
     # Docker image repository for the GlassFlow ETL backend
     repository: ghcr.io/glassflow/glassflow-etl-be
     # Image tag/version to deploy
-    tag: glassflow-cloud
+    tag: main
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: Always
   
@@ -67,7 +67,7 @@ ui:
     # Docker image repository for the GlassFlow ETL frontend
     repository: ghcr.io/glassflow/glassflow-etl-fe
     # Image tag/version to deploy
-    tag: glassflow-cloud
+    tag: main
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: Always
   
@@ -139,17 +139,17 @@ glassflow-operator:
     # Ingestor component docker image
     ingestor:
       repository: ghcr.io/glassflow/glassflow-etl-ingestor
-      tag: glassflow-cloud
+      tag: main
     
     # Join component docker image
     join:
       repository: ghcr.io/glassflow/glassflow-etl-join
-      tag: glassflow-cloud
+      tag: main
     
     # Sink component docker image
     sink:
       repository: ghcr.io/glassflow/glassflow-etl-sink
-      tag: glassflow-cloud
+      tag: main
   
   # NATS configuration for the operator
   # These settings are used when the operator needs to connect to NATS
