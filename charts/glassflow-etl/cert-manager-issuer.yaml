@@ -1,0 +1,23 @@
+# Cert-manager ClusterIssuer for Let's Encrypt
+# This file should be applied to your cluster before deploying the Helm chart
+# with TLS configuration.
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    # Let's Encrypt production server
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Email address for Let's Encrypt account
+    email: your-email@example.com  # CHANGE THIS TO YOUR EMAIL
+    # Private key secret for storing the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    # HTTP01 challenge solver
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
