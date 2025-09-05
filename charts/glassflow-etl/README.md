@@ -38,6 +38,36 @@ helm dependency update
 helm install glassflow-etl . --namespace <namespace> --create-namespace
 ```
 
+## Setting up the ingress 
+By default the `values.yaml` does not configure public access to glassflow installation. To enable public access to the installed glassflow, you can enable ingress by updating the `values.yaml` as follows:
+```yaml
+ingress:
+  # Enable or disable ingress
+  # Set to true to expose the application externally
+  enabled: true  
+  # Ingress class name (required for Kubernetes 1.18+)
+  # Example: "nginx", "traefik", "istio"
+  ingressClassName: "nginx"
+
+  # Annotations for the ingress resource
+  # Useful for SSL termination, rate limiting, etc.
+  annotations: {}
+  # Host configurations for the ingress  
+  hosts: 
+  - host: "glassflow.example.com"
+    paths:
+    - path: "/"
+      pathType: Prefix
+      serviceName: "glassflow-ui"
+      servicePort: 8080
+    - path: "/api/v1"
+      pathType: Prefix
+      serviceName: "glassflow-api"
+      servicePort: 8081
+  tls: []
+```
+For more details, please refer to the [installation docs](https://docs.glassflow.dev/installation/self-host/kubernetes-helm)
+
 ## Configuration
 
 The following table lists the configurable parameters of the chart and their default values.
