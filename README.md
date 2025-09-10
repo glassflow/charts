@@ -20,7 +20,7 @@ helm repo update
 ### Install the Chart
 
 ```bash
-# Install glassflow-etl (this will also install NATS)
+# Install glassflow-etl (this will also install NATS and glassflow-operator charts)
 helm install glassflow glassflow/glassflow-etl --create-namespace --namespace glassflow
 ```
 This installs the GlassFlow Helm chart into the `glassflow` namespace. The `--create-namespace` flag ensures the namespace is created if it doesn’t already exist.
