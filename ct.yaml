@@ -7,4 +7,5 @@ check-version-increment: false
 helm-extra-args: --timeout 5m
 chart-repos:
   - nats=https://nats-io.github.io/k8s/helm/charts/
+  - glassflow-operator=https://glassflow.github.io/glassflow-etl-k8s-operator
 
