@@ -3,6 +3,29 @@ entries:
   glassflow-etl:
   - apiVersion: v2
     appVersion: 2.0.0
+    created: "2025-09-15T12:46:48.332629867Z"
+    dependencies:
+    - name: glassflow-operator
+      repository: https://glassflow.github.io/glassflow-etl-k8s-operator
+      version: 0.1.2
+    - alias: nats
+      condition: nats.enabled
+      name: nats
+      repository: https://nats-io.github.io/k8s/helm/charts/
+      version: 1.3.6
+    description: A Helm chart for Kubernetes
+    digest: 2d11d4ac0d9dd7ae0f877a5c4f125281dab7e5d554c1999f84b203e7136bdf69
+    maintainers:
+    - email: help@glassflow.dev
+      name: Glassflow
+      url: https://glassflow.dev
+    name: glassflow-etl
+    type: application
+    urls:
+    - https://github.com/glassflow/charts/releases/download/glassflow-etl-0.2.2/glassflow-etl-0.2.2.tgz
+    version: 0.2.2
+  - apiVersion: v2
+    appVersion: 2.0.0
     created: "2025-09-11T07:56:30.855127757Z"
     dependencies:
     - name: glassflow-operator
@@ -184,4 +207,4 @@ entries:
     urls:
     - https://github.com/glassflow/charts/releases/download/glassflow-operator-0.1.0/glassflow-operator-0.1.0.tgz
     version: 0.1.0
-generated: "2025-09-11T07:56:30.855169966Z"
+generated: "2025-09-15T12:46:48.33270091Z"
