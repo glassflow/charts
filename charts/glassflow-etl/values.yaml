@@ -113,7 +113,7 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: ghcr.io/glassflow/glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: main
+        tag: stable
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: Always
 
