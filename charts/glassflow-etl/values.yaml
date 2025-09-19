@@ -134,6 +134,21 @@ glassflow-operator:
       # Useful for IAM roles, OIDC providers, etc.
       annotations: {}
 
+  # Components resource definitions
+  componentResources:
+    # Ingestor component resource definitions
+    ingestor:
+      requests: {}
+      limits: {}
+    # Join component resource definitions
+    join:
+      requests: {}
+      limits: {}
+    # Sink component resource definitions
+    sink:
+      requests: {}
+      limits: {}
+
   # Component image configurations
   componentImages:
     # Ingestor component docker image
