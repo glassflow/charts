@@ -23,9 +23,9 @@ api:
     # Docker image repository for the GlassFlow ETL backend
     repository: ghcr.io/glassflow/glassflow-etl-be
     # Image tag/version to deploy
-    tag: stable
+    tag: v2.1.1
     # Image pull policy: Always, IfNotPresent, or Never
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 
   # Resource requirements and limits for the API pods
   resources:
@@ -67,9 +67,9 @@ ui:
     # Docker image repository for the GlassFlow ETL frontend
     repository: ghcr.io/glassflow/glassflow-etl-fe
     # Image tag/version to deploy
-    tag: stable
+    tag: v2.1.1
     # Image pull policy: Always, IfNotPresent, or Never
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 
   # Resource requirements and limits for the UI pods
   resources:
@@ -113,9 +113,9 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: ghcr.io/glassflow/glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: stable
+        tag: v0.0.5
         # Image pull policy: Always, IfNotPresent, or Never
-        pullPolicy: Always
+        pullPolicy: IfNotPresent
 
       # Resource requirements and limits for the operator pods
       resources:
@@ -154,17 +154,17 @@ glassflow-operator:
     # Ingestor component docker image
     ingestor:
       repository: ghcr.io/glassflow/glassflow-etl-ingestor
-      tag: stable
+      tag: v2.1.1
 
     # Join component docker image
     join:
       repository: ghcr.io/glassflow/glassflow-etl-join
-      tag: stable
+      tag: v2.1.1
 
     # Sink component docker image
     sink:
       repository: ghcr.io/glassflow/glassflow-etl-sink
-      tag: stable
+      tag: v2.1.1
 
   # NATS configuration for the operator
   # These settings are used when the operator needs to connect to NATS
