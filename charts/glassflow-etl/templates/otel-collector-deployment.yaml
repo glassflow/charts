@@ -1,0 +1,61 @@
+{{- if .Values.global.observability.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-otel-collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-otel-collector
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-otel-collector
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-otel-collector
+        image: otel/opentelemetry-collector-contrib:0.108.0
+        command:
+          - "/otelcol-contrib"
+          - "--config=/etc/otel-collector-config.yaml"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        ports:
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 4318
+          name: otlp-http
+        - containerPort: 8888
+          name: metrics
+        - containerPort: 13133
+          name: health-check
+        volumeMounts:
+        - name: config
+          mountPath: /etc/otel-collector-config.yaml
+          subPath: otel-collector-config.yaml
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 13133
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Release.Name }}-otel-collector-config
+{{- end }}

@@ -1,0 +1,36 @@
+{{- if .Values.global.observability.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-otel-collector-config
+  namespace: {{ .Release.Namespace }}
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+
+    exporters:
+      otlp: {{ toYaml .Values.global.observability.exporter.otlp | nindent 8 }}
+        
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
+    service:
+      extensions: [health_check]
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp]
+{{- end }}
