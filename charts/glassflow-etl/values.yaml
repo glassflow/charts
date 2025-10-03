@@ -9,13 +9,13 @@
 global:
   # Global image registry - if set, will be prepended to all image repositories
   imageRegistry: "ghcr.io/glassflow/"
-  observability:
-    enabled: true
-    exporter:
-      otlp:
-        endpoint: http://otel-collector.observability.svc.cluster.local:4318
-        tls:
-          insecure: true
+  observability:    
+    metrics:
+      enabled: true
+    logs:
+      enabled: false
+      exporter:
+        otlp: {}
 
 # =============================================================================
 # API COMPONENT CONFIGURATION

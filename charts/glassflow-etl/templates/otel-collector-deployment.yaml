@@ -1,4 +1,4 @@
-{{- if .Values.global.observability.enabled }}
+{{- if or .Values.global.observability.metrics.enabled .Values.global.observability.logs.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,8 +34,10 @@ spec:
           name: otlp-grpc
         - containerPort: 4318
           name: otlp-http
-        - containerPort: 8888
-          name: metrics
+{{- if .Values.global.observability.metrics.enabled }}
+        - containerPort: 9090
+          name: prometheus
+{{- end }}
         - containerPort: 13133
           name: health-check
         volumeMounts:

@@ -122,9 +122,11 @@ spec:
             - name: GLASSFLOW_OTEL_SERVICE_NAMESPACE
               value: {{ .Release.Namespace }}
             - name: GLASSFLOW_OTEL_SERVICE_VERSION
-              value: "{{ .Values.api.image.tag }}"
-            - name: GLASSFLOW_OTEL_OBSERVABILITY
-              value: "{{ .Values.global.observability.enabled }}"
+              value: "{{ .Values.api.image.tag }}"          
+            - name: GLASSFLOW_OTEL_LOGS_ENABLED
+              value: "{{ .Values.global.observability.logs.enabled }}"
+            - name: GLASSFLOW_OTEL_METRICS_ENABLED
+              value: "{{ .Values.global.observability.metrics.enabled }}"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://{{ .Release.Name }}-otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4318"
             {{- range .Values.api.env }}
