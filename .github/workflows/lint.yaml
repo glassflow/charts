@@ -27,5 +27,8 @@ jobs:
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.1
 
+      - name: Update Helm dependencies
+        run: helm dependency update charts/glassflow-etl
+
       - name: Run chart-testing (lint)
         run: ct lint --config ct.yaml

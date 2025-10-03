@@ -1,0 +1,24 @@
+{{- if or .Values.global.observability.metrics.enabled .Values.global.observability.logs.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-otel-collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-otel-collector
+spec:
+  ports:
+  - name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+  - name: otlp-http
+    port: 4318
+    targetPort: 4318
+{{- if .Values.global.observability.metrics.enabled }}
+  - name: prometheus
+    port: 9090
+    targetPort: 9090
+{{- end }}
+  selector:
+    app: {{ .Release.Name }}-otel-collector
+{{- end }}

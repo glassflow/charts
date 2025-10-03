@@ -8,7 +8,14 @@
 # Global settings that apply across all components of the chart
 global:
   # Global image registry - if set, will be prepended to all image repositories
-  imageRegistry: ""
+  imageRegistry: "ghcr.io/glassflow/"
+  observability:
+    metrics:
+      enabled: true
+    logs:
+      enabled: false
+      exporter:
+        otlp: {}
 
 # =============================================================================
 # API COMPONENT CONFIGURATION
@@ -17,13 +24,13 @@ global:
 api:
   # Number of API replicas for high availability
   replicas: 1
-
+  logLevel: "INFO"
   # Container image configuration for the API component
   image:
     # Docker image repository for the GlassFlow ETL backend
-    repository: ghcr.io/glassflow/glassflow-etl-be
+    repository: glassflow-etl-be
     # Image tag/version to deploy
-    tag: v2.1.2
+    tag: v2.1.3
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -52,7 +59,7 @@ api:
   # env:
   #   - name: GLASSFLOW_LOG_LEVEL
   #     value: "DEBUG"
-  env: {}
+  env: []
 
 # =============================================================================
 # UI COMPONENT CONFIGURATION
@@ -65,9 +72,9 @@ ui:
   # Container image configuration for the UI component
   image:
     # Docker image repository for the GlassFlow ETL frontend
-    repository: ghcr.io/glassflow/glassflow-etl-fe
+    repository: glassflow-etl-fe
     # Image tag/version to deploy
-    tag: v2.1.2
+    tag: v2.1.3
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -94,7 +101,7 @@ ui:
   # env:
   #   - name: NEXT_PUBLIC_API_URL
   #     value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8080"
-  env: {}
+  env: []
 
 # =============================================================================
 # GLASSFLOW OPERATOR CONFIGURATION
@@ -111,9 +118,9 @@ glassflow-operator:
       # Container image configuration for the operator
       image:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
-        repository: ghcr.io/glassflow/glassflow-etl-k8s-operator
+        repository: glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: v0.6.0
+        tag: v1.0.0
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: IfNotPresent
 
@@ -134,37 +141,49 @@ glassflow-operator:
       # Useful for IAM roles, OIDC providers, etc.
       annotations: {}
 
-  # Components resource definitions
-  componentResources:
-    # Ingestor component resource definitions
+  glassflowComponents:
     ingestor:
-      requests: {}
-      limits: {}
-    # Join component resource definitions
+      image:
+        repository: glassflow-etl-ingestor
+        tag: v2.1.3
+      logLevel: "INFO"
+      resources:
+        requests:
+          cpu: 1000m
+          memory: 1Gi
+        limits:
+          cpu: 1500m
+          memory: 1.5Gi
+      # Node affinity for ingestor component (optional)
+      affinity: {}
     join:
-      requests: {}
-      limits: {}
-    # Sink component resource definitions
+      image:
+        repository: glassflow-etl-join
+        tag: v2.1.3
+      logLevel: "INFO"
+      resources:
+        requests:
+          cpu: 1000m
+          memory: 1Gi
+        limits:
+          cpu: 1500m
+          memory: 1.5Gi
+      # Node affinity for join component (optional)
+      affinity: {}
     sink:
-      requests: {}
-      limits: {}
-
-  # Component image configurations
-  componentImages:
-    # Ingestor component docker image
-    ingestor:
-      repository: ghcr.io/glassflow/glassflow-etl-ingestor
-      tag: v2.1.2
-
-    # Join component docker image
-    join:
-      repository: ghcr.io/glassflow/glassflow-etl-join
-      tag: v2.1.2
-
-    # Sink component docker image
-    sink:
-      repository: ghcr.io/glassflow/glassflow-etl-sink
-      tag: v2.1.2
+      image:
+        repository: glassflow-etl-sink
+        tag: v2.1.3
+      logLevel: "INFO"
+      resources:
+        requests:
+          cpu: 1000m
+          memory: 1Gi
+        limits:
+          cpu: 1500m
+          memory: 1.5Gi
+      # Node affinity for sink component (optional)
+      affinity: {}
 
   # NATS configuration for the operator
   # These settings are used when the operator needs to connect to NATS
