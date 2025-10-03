@@ -9,7 +9,7 @@
 global:
   # Global image registry - if set, will be prepended to all image repositories
   imageRegistry: "ghcr.io/glassflow/"
-  observability:    
+  observability:
     metrics:
       enabled: true
     logs:
@@ -108,7 +108,7 @@ ui:
 # =============================================================================
 # Kubernetes operator for managing ETL pipelines and related resources
 glassflow-operator:
-  # Operator deployment configuration  
+  # Operator deployment configuration
   controllerManager:
     # Number of operator replicas for high availability
     replicas: 1
