@@ -208,6 +208,37 @@ glassflow-operator:
     # Service type: ClusterIP, NodePort, or LoadBalancer
     type: ClusterIP
 
+
+# =============================================================================
+# NATS OPERATOR CONFIGURATION
+# =============================================================================
+# NATS prometheus exporter for getting metrics from NATS
+# This is enabled when global.observability.metrics.enabled is true
+natsPrometheusExporter:
+  image:
+    repository: natsio/prometheus-nats-exporter
+    tag: 0.17.3
+    pullPolicy: IfNotPresent
+  # Exporter metrics configuration
+  metrics:
+    accstatz: true
+    connz: true
+    connz_detailed: true
+    jsz: true
+    gatewayz: true
+    leafz: true
+    routez: true
+    subz: true
+    varz: true
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 7777
+    protocol: TCP
+    name: http
+
+
 # =============================================================================
 # NATS CONFIGURATION
 # =============================================================================
