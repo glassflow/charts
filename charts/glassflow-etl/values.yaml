@@ -16,7 +16,13 @@ global:
       enabled: false
       exporter:
         otlp: {}
-
+  nats:
+    # NATS address for the operator to connect to
+    # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local if not specified
+    # address: ""
+    stream:
+      maxAge: 24h
+      maxBytes: 100GB
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
@@ -53,7 +59,6 @@ api:
   # Environment variables for the API service
   # Supported variables:
   # - GLASSFLOW_LOG_FILE_PATH: Path to the log file (Default: /tmp/logs/glassflow)
-  # - GLASSFLOW_NATS_SERVER: NATS server address (Default: nats://{{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222)
   # - GLASSFLOW_LOG_LEVEL: Log level (Default: INFO)
   # Example:
   # env:
@@ -120,7 +125,7 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: v1.2.0
+        tag: v1.2.1
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: IfNotPresent
 
@@ -184,20 +189,6 @@ glassflow-operator:
           memory: 1.5Gi
       # Node affinity for sink component (optional)
       affinity: {}
-
-  # NATS configuration for the operator
-  # These settings are used when the operator needs to connect to NATS
-  # You can ignore this section if nats.enabled is true (default)
-  nats:
-    # NATS address for the operator to connect to
-    # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local if not specified
-    address: ""
-    # NATS stream configuration for the operator
-    # Defaults to 24h and 100GB if not specified. Which ever condition is reached first will trigger a purge.
-    stream:
-      maxAge: 24h
-      maxBytes: 100GB
-
 # =============================================================================
 # NATS OPERATOR CONFIGURATION
 # =============================================================================
