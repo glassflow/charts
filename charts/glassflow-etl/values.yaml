@@ -30,7 +30,7 @@ api:
     # Docker image repository for the GlassFlow ETL backend
     repository: glassflow-etl-be
     # Image tag/version to deploy
-    tag: v2.1.3
+    tag: v2.2.0
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -74,7 +74,7 @@ ui:
     # Docker image repository for the GlassFlow ETL frontend
     repository: glassflow-etl-fe
     # Image tag/version to deploy
-    tag: v2.1.3
+    tag: v2.2.0
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -120,7 +120,7 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: v1.0.0
+        tag: v1.2.0
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: IfNotPresent
 
@@ -145,7 +145,7 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.1.3
+        tag: v2.2.0
       logLevel: "INFO"
       resources:
         requests:
@@ -159,7 +159,7 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.1.3
+        tag: v2.2.0
       logLevel: "INFO"
       resources:
         requests:
@@ -173,7 +173,7 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.1.3
+        tag: v2.2.0
       logLevel: "INFO"
       resources:
         requests:
@@ -192,22 +192,11 @@ glassflow-operator:
     # NATS address for the operator to connect to
     # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local if not specified
     address: ""
-
-    # NATS component address for the operator to connect to
-    # Defaults to the nats address if not specified
-    componentAddress: ""
-
-  # Metrics service for the operator
-  metricsService:
-    # Service ports configuration
-    ports:
-    - name: https        # Port name for service discovery
-      port: 8443         # Service port (external)
-      protocol: TCP      # Protocol type
-      targetPort: 8443   # Container port (internal)
-    # Service type: ClusterIP, NodePort, or LoadBalancer
-    type: ClusterIP
-
+    # NATS stream configuration for the operator
+    # Defaults to 24h and 100GB if not specified. Which ever condition is reached first will trigger a purge.
+    stream:
+      maxAge: 24h
+      maxBytes: 100GB
 
 # =============================================================================
 # NATS OPERATOR CONFIGURATION
