@@ -1,0 +1,131 @@
+{{- if and .Values.nats.enabled .Values.global.observability.metrics.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-prometheus-nats-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-prometheus-nats-exporter
+    app.kubernetes.io/instance: {{ .Release.Name }}-prometheus-nats-exporter
+    app.kubernetes.io/name: prometheus-nats-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-prometheus-nats-exporter
+      app.kubernetes.io/instance: {{ .Release.Name }}-prometheus-nats-exporter
+      app.kubernetes.io/name: prometheus-nats-exporter
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-prometheus-nats-exporter
+        app.kubernetes.io/instance: {{ .Release.Name }}-prometheus-nats-exporter
+        app.kubernetes.io/name: prometheus-nats-exporter              
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-nats
+          image: "busybox:1.35"
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for NATS to be ready..."
+              until nc -z {{ .Release.Name }}-nats-headless.{{ .Release.Namespace }}.svc.cluster.local 8222; do
+                echo "NATS monitoring port not ready, waiting..."
+                sleep 2
+              done
+              echo "NATS monitoring port is ready!"
+      containers:
+        - name: prometheus-nats-exporter
+          image: "{{ .Values.natsPrometheusExporter.image.repository }}:{{ .Values.natsPrometheusExporter.image.tag }}"
+          imagePullPolicy: {{ .Values.natsPrometheusExporter.image.pullPolicy }}
+          args:
+            - "-port"
+            - "7777"
+            {{- if .Values.natsPrometheusExporter.metrics.varz }}
+            - "-varz"
+            {{- end }}
+            {{- if .Values.natsPrometheusExporter.metrics.accstatz }}
+            - "-accstatz"
+            {{- end }}
+            {{- if .Values.natsPrometheusExporter.metrics.connz }}
+            - "-connz"
+            {{- end }}
+            {{- if .Values.natsPrometheusExporter.metrics.connz_detailed }}
+            - "-connz_detailed"
+            {{- end }}
+            {{- if .Values.natsPrometheusExporter.metrics.routez }}
+            - "-routez"
+            {{- end }}
+            {{- if .Values.natsPrometheusExporter.metrics.subz }}
+            - "-subz"
+            {{- end }}
+            {{- if .Values.natsPrometheusExporter.metrics.gatewayz }}
+            - "-gatewayz"
+            {{- end }}
+            {{- if .Values.natsPrometheusExporter.metrics.jsz }}
+            - "-jsz=all"
+            {{- end }}
+            {{- if .Values.natsPrometheusExporter.metrics.leafz }}
+            - "-leafz"
+            {{- end }}
+            - "http://{{ .Release.Name }}-nats-headless.{{ .Release.Namespace }}.svc.cluster.local:8222"            
+          ports:
+            - containerPort: {{ .Values.natsPrometheusExporter.service.targetPort }}
+              name: {{ .Values.natsPrometheusExporter.service.name }}
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /metrics
+              port: {{ .Values.natsPrometheusExporter.service.name }}
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: {{ .Values.natsPrometheusExporter.service.name }}
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: {{ .Values.natsPrometheusExporter.service.name }}
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+{{- end }}

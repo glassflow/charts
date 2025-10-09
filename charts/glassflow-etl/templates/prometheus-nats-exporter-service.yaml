@@ -1,0 +1,18 @@
+{{- if and .Values.nats.enabled .Values.global.observability.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-prometheus-nats-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-prometheus-nats-exporter
+spec:
+  type: {{ .Values.natsPrometheusExporter.service.type }}
+  ports:
+    - port: {{ .Values.natsPrometheusExporter.service.port }}
+      targetPort: {{ .Values.natsPrometheusExporter.service.targetPort }}
+      protocol: {{ .Values.natsPrometheusExporter.service.protocol }}
+      name: {{ .Values.natsPrometheusExporter.service.name }}
+  selector:
+    app: {{ .Release.Name }}-prometheus-nats-exporter
+{{- end }}

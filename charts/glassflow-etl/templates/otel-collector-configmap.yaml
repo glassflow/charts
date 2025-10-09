@@ -13,6 +13,16 @@ data:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
+{{- if and .Values.nats.enabled .Values.global.observability.metrics.enabled }}
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'nats-exporter'
+              static_configs:
+                - targets: ['{{ .Release.Name }}-prometheus-nats-exporter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.natsPrometheusExporter.service.port }}']
+              scrape_interval: 15s
+              metrics_path: /metrics
+{{- end }}
 
     processors:
       batch:
@@ -37,7 +47,7 @@ data:
 {{- if .Values.global.observability.metrics.enabled }}
       prometheus:
           endpoint: "0.0.0.0:9090"
-          namespace: {{ .Release.Namespace }}          
+          namespace: {{ .Release.Namespace }}
           send_timestamps: true
           enable_open_metrics: true
 {{- end }}
@@ -57,7 +67,7 @@ data:
 {{- end }}
 {{- if .Values.global.observability.metrics.enabled }}
         metrics:
-          receivers: [otlp]
+          receivers: [otlp{{- if .Values.nats.enabled }}, prometheus{{- end }}]
           processors: [batch, resource]
           exporters: [prometheus]
 {{- end }}
