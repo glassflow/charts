@@ -102,11 +102,42 @@ ui:
   # Environment variables for the UI service
   # Supported variables:
   # - NEXT_PUBLIC_API_URL: API URL for the application
+  # - KAFKA_GATEWAY_URL: Kafka Kerberos Gateway URL (set automatically for sidecar)
   # Example:
   # env:
   #   - name: NEXT_PUBLIC_API_URL
   #     value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8080"
   env: []
+
+  # Kafka Kerberos Gateway sidecar configuration
+  # This sidecar provides Kerberos authentication support for Kafka connections
+  kafkaGateway:
+    # Enable or disable the Kafka Kerberos Gateway sidecar
+    # Set to true if you need to connect to Kerberos-secured Kafka clusters
+    enabled: true
+    
+    # Container image configuration for the gateway sidecar
+    image:
+      # Docker image repository for the Kafka Kerberos Gateway
+      repository: ghcr.io/glassflow/kafka-kerberos-gateway
+      # Image tag/version to deploy
+      tag: latest
+      # Image pull policy: Always, IfNotPresent, or Never
+      pullPolicy: IfNotPresent
+    
+    # Resource requirements and limits for the gateway sidecar
+    resources:
+      # Minimum resources required by the gateway sidecar
+      requests:
+        memory: "128Mi"  # Memory request - gateway is lightweight
+        cpu: "50m"       # CPU request - 50 millicores = 0.05 CPU cores
+      # Maximum resources the gateway sidecar can use
+      limits:
+        memory: "256Mi"  # Memory limit - gateway doesn't need much
+        cpu: "200m"      # CPU limit - 200 millicores = 0.2 CPU cores
+    
+    # Port for the gateway service (internal to pod)
+    port: 8082
 
 # =============================================================================
 # GLASSFLOW OPERATOR CONFIGURATION
