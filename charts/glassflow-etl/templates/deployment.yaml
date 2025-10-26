@@ -47,13 +47,9 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
           env:
             - name: NEXT_PUBLIC_API_URL
-              value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.api.service.port }}"
+              value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8081"
             - name: NEXT_PUBLIC_IN_DOCKER
               value: "false"
             {{- if .Values.ui.kafkaGateway.enabled }}
