@@ -125,7 +125,7 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: v1.2.1
+        tag: v1.3.0
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: IfNotPresent
 
@@ -150,7 +150,7 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.2.0
+        tag: v2.4.0
       logLevel: "INFO"
       resources:
         requests:
@@ -164,7 +164,7 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.2.0
+        tag: v2.4.0
       logLevel: "INFO"
       resources:
         requests:
@@ -178,7 +178,7 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.2.0
+        tag: v2.4.0
       logLevel: "INFO"
       resources:
         requests:
