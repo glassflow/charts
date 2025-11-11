@@ -52,10 +52,46 @@ spec:
               value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8081"
             - name: NEXT_PUBLIC_IN_DOCKER
               value: "false"
-            {{- range .Values.ui.env }}
-            - name: {{ .name | quote }}
-              value: {{ .value | quote }}
+            {{- if .Values.ui.kafkaGateway.enabled }}
+            - name: KAFKA_GATEWAY_URL
+              value: "http://localhost:{{ .Values.ui.kafkaGateway.port }}"
             {{- end }}
+            {{- range $key, $value := .Values.ui.env }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+            {{- end }}
+        {{- if .Values.ui.kafkaGateway.enabled }}
+        - name: kafka-gateway
+          image: "{{ .Values.global.imageRegistry | default "" }}{{ .Values.ui.kafkaGateway.image.repository }}:{{ .Values.ui.kafkaGateway.image.tag }}"
+          imagePullPolicy: {{ .Values.ui.kafkaGateway.image.pullPolicy }}
+          {{- with .Values.ui.kafkaGateway.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: gateway
+              containerPort: {{ .Values.ui.kafkaGateway.port }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "{{ .Values.ui.kafkaGateway.port }}"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: gateway
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: gateway
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+        {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
