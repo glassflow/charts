@@ -23,6 +23,17 @@ global:
     stream:
       maxAge: 24h
       maxBytes: 25GB
+
+  # Pipelines namespace configuration
+  pipelines:
+    namespace:
+      # When true, operator creates per-pipeline namespaces (pipeline-<id>)
+      auto: true
+      # When auto is false, the fixed namespace to deploy all pipelines into
+      name: glassflow-pipelines
+      # When auto is false, Helm can optionally create the namespace and add label managed-by=helm
+      create: true
+
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
@@ -36,7 +47,7 @@ api:
     # Docker image repository for the GlassFlow ETL backend
     repository: glassflow-etl-be
     # Image tag/version to deploy
-    tag: v2.2.0
+    tag: v2.4.0
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -79,7 +90,7 @@ ui:
     # Docker image repository for the GlassFlow ETL frontend
     repository: glassflow-etl-fe
     # Image tag/version to deploy
-    tag: v2.2.0
+    tag: v2.4.0
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -156,7 +167,7 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: v1.2.1
+        tag: v1.3.0
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: IfNotPresent
 
@@ -181,7 +192,7 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.2.0
+        tag: v2.4.0
       logLevel: "INFO"
       resources:
         requests:
@@ -195,7 +206,7 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.2.0
+        tag: v2.4.0
       logLevel: "INFO"
       resources:
         requests:
@@ -209,7 +220,7 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.2.0
+        tag: v2.4.0
       logLevel: "INFO"
       resources:
         requests:
