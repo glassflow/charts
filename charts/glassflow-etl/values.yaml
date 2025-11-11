@@ -119,7 +119,7 @@ ui:
     # Container image configuration for the gateway sidecar
     image:
       # Docker image repository for the Kafka Kerberos Gateway
-      repository: ghcr.io/glassflow/kafka-kerberos-gateway
+      repository: kafka-kerberos-gateway
       # Image tag/version to deploy
       tag: latest
       # Image pull policy: Always, IfNotPresent, or Never
