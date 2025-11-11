@@ -23,7 +23,7 @@ global:
     stream:
       maxAge: 24h
       maxBytes: 25GB
-      
+
   # Pipelines namespace configuration
   pipelines:
     namespace:
