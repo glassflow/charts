@@ -94,7 +94,7 @@ The following table lists the configurable parameters of the chart and their def
 | `api.replicas` | Number of API replicas | `1` |
 | `api.logLevel` | API log level | `"INFO"` |
 | `api.image.repository` | API image repository | `glassflow-etl-be` |
-| `api.image.tag` | API image tag | `v2.2.0` |
+| `api.image.tag` | API image tag | `v2.4.0` |
 | `api.image.pullPolicy` | API image pull policy | `IfNotPresent` |
 | `api.resources.requests.memory` | API memory requests | `"100Mi"` |
 | `api.resources.requests.cpu` | API CPU requests | `"100m"` |
@@ -111,7 +111,7 @@ The following table lists the configurable parameters of the chart and their def
 |-----------|-------------|---------|
 | `ui.replicas` | Number of UI replicas | `1` |
 | `ui.image.repository` | UI image repository | `glassflow-etl-fe` |
-| `ui.image.tag` | UI image tag | `v2.2.0` |
+| `ui.image.tag` | UI image tag | `v2.4.0` |
 | `ui.image.pullPolicy` | UI image pull policy | `IfNotPresent` |
 | `ui.resources.requests.memory` | UI memory requests | `"512Mi"` |
 | `ui.resources.requests.cpu` | UI CPU requests | `"100m"` |
@@ -120,7 +120,16 @@ The following table lists the configurable parameters of the chart and their def
 | `ui.service.type` | UI service type | `ClusterIP` |
 | `ui.service.port` | UI service port | `8080` |
 | `ui.service.targetPort` | UI service target port | `8080` |
-| `ui.env` | Additional environment variables (array of objects with `name` and `value` keys) | `[]` |
+| `ui.env` | Additional environment variables (array of objects with `name` and `value` keys) | `{}` |
+| `ui.kafkaGateway.enabled` | Enable Kafka Kerberos Gateway sidecar | `true` |
+| `ui.kafkaGateway.image.repository` | Kafka Gateway image repository | `kafka-kerberos-gateway` |
+| `ui.kafkaGateway.image.tag` | Kafka Gateway image tag | `latest` |
+| `ui.kafkaGateway.image.pullPolicy` | Kafka Gateway image pull policy | `IfNotPresent` |
+| `ui.kafkaGateway.resources.requests.memory` | Kafka Gateway memory requests | `"128Mi"` |
+| `ui.kafkaGateway.resources.requests.cpu` | Kafka Gateway CPU requests | `"50m"` |
+| `ui.kafkaGateway.resources.limits.memory` | Kafka Gateway memory limits | `"256Mi"` |
+| `ui.kafkaGateway.resources.limits.cpu` | Kafka Gateway CPU limits | `"200m"` |
+| `ui.kafkaGateway.port` | Kafka Gateway port (internal to pod) | `8082` |
 
 ### GlassFlow Operator Configuration
 
@@ -312,3 +321,9 @@ helm install glassflow-etl glassflow-etl-0.1.0.tgz --namespace <namespace> --set
    - By default, the operator creates per-pipeline namespaces (pipeline-<id>)
    - This can be disabled by setting `global.pipelines.namespace.auto: false`
    - When auto is disabled, all pipelines are deployed to a fixed namespace specified by `global.pipelines.namespace.name`
+
+9. Kafka Kerberos Gateway:
+   - The UI component includes an optional Kafka Kerberos Gateway sidecar for connecting to Kerberos-secured Kafka clusters
+   - The gateway is enabled by default (`ui.kafkaGateway.enabled: true`)
+   - The gateway runs on port 8082 within the UI pod
+   - The `KAFKA_GATEWAY_URL` environment variable is automatically set for the sidecar when the gateway is enabled
