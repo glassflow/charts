@@ -52,13 +52,15 @@ spec:
               value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8081"
             - name: NEXT_PUBLIC_IN_DOCKER
               value: "false"
+            - name: NEXT_PUBLIC_ANALYTICS_ENABLED
+              value: "{{ .Values.global.analytics.enabled }}"
             {{- if .Values.ui.kafkaGateway.enabled }}
             - name: KAFKA_GATEWAY_URL
               value: "http://localhost:{{ .Values.ui.kafkaGateway.port }}"
             {{- end }}
-            {{- range $key, $value := .Values.ui.env }}
-            - name: {{ $key | quote }}
-              value: {{ $value | quote }}
+            {{- range .Values.ui.env }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
             {{- end }}
         {{- if .Values.ui.kafkaGateway.enabled }}
         - name: kafka-gateway
