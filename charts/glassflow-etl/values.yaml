@@ -47,7 +47,7 @@ api:
     # Docker image repository for the GlassFlow ETL backend
     repository: glassflow-etl-be
     # Image tag/version to deploy
-    tag: v2.4.1
+    tag: v2.4.2
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -90,7 +90,7 @@ ui:
     # Docker image repository for the GlassFlow ETL frontend
     repository: glassflow-etl-fe
     # Image tag/version to deploy
-    tag: v2.4.1
+    tag: v2.4.2
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -192,7 +192,7 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.4.1
+        tag: v2.4.2
       logLevel: "INFO"
       resources:
         requests:
@@ -206,7 +206,7 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.4.1
+        tag: v2.4.2
       logLevel: "INFO"
       resources:
         requests:
@@ -220,7 +220,7 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.4.1
+        tag: v2.4.2
       logLevel: "INFO"
       resources:
         requests:
