@@ -53,7 +53,7 @@ spec:
             - name: NEXT_PUBLIC_IN_DOCKER
               value: "false"
             - name: NEXT_PUBLIC_ANALYTICS_ENABLED
-              value: "{{ .Values.global.analytics.enabled }}"
+              value: "{{ .Values.global.usageStats.enabled }}"
             {{- if .Values.ui.kafkaGateway.enabled }}
             - name: KAFKA_GATEWAY_URL
               value: "http://localhost:{{ .Values.ui.kafkaGateway.port }}"

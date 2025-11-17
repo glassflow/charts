@@ -34,7 +34,7 @@ global:
       # When auto is false, Helm can optionally create the namespace and add label managed-by=helm
       create: true
 
-  analytics:
+  usageStats:
     enabled: true
 # =============================================================================
 # API COMPONENT CONFIGURATION

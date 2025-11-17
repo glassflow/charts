@@ -86,6 +86,7 @@ The following table lists the configurable parameters of the chart and their def
 | `global.pipelines.namespace.auto` | When true, operator creates per-pipeline namespaces (pipeline-<id>) | `true` |
 | `global.pipelines.namespace.name` | Fixed namespace to deploy all pipelines into (when auto is false) | `glassflow-pipelines` |
 | `global.pipelines.namespace.create` | When auto is false, Helm can optionally create the namespace | `true` |
+| `global.usageStats.enabled` | Enable usage statistics collection | `true` |
 
 ### API Configuration
 
@@ -120,7 +121,7 @@ The following table lists the configurable parameters of the chart and their def
 | `ui.service.type` | UI service type | `ClusterIP` |
 | `ui.service.port` | UI service port | `8080` |
 | `ui.service.targetPort` | UI service target port | `8080` |
-| `ui.env` | Additional environment variables (array of objects with `name` and `value` keys) | `{}` |
+| `ui.env` | Additional environment variables (array of objects with `name` and `value` keys) | `[]` |
 | `ui.kafkaGateway.enabled` | Enable Kafka Kerberos Gateway sidecar | `true` |
 | `ui.kafkaGateway.image.repository` | Kafka Gateway image repository | `kafka-kerberos-gateway` |
 | `ui.kafkaGateway.image.tag` | Kafka Gateway image tag | `latest` |
