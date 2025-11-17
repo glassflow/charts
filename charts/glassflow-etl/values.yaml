@@ -34,6 +34,8 @@ global:
       # When auto is false, Helm can optionally create the namespace and add label managed-by=helm
       create: true
 
+  usageStats:
+    enabled: true
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
@@ -118,7 +120,7 @@ ui:
   # env:
   #   - name: NEXT_PUBLIC_API_URL
   #     value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8080"
-  env: {}
+  env: []
 
   # Kafka Kerberos Gateway sidecar configuration
   # This sidecar provides Kerberos authentication support for Kafka connections
