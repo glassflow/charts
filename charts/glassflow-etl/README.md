@@ -95,7 +95,7 @@ The following table lists the configurable parameters of the chart and their def
 | `api.replicas` | Number of API replicas | `1` |
 | `api.logLevel` | API log level | `"INFO"` |
 | `api.image.repository` | API image repository | `glassflow-etl-be` |
-| `api.image.tag` | API image tag | `v2.4.0` |
+| `api.image.tag` | API image tag | `v2.4.2` |
 | `api.image.pullPolicy` | API image pull policy | `IfNotPresent` |
 | `api.resources.requests.memory` | API memory requests | `"100Mi"` |
 | `api.resources.requests.cpu` | API CPU requests | `"100m"` |
@@ -112,7 +112,7 @@ The following table lists the configurable parameters of the chart and their def
 |-----------|-------------|---------|
 | `ui.replicas` | Number of UI replicas | `1` |
 | `ui.image.repository` | UI image repository | `glassflow-etl-fe` |
-| `ui.image.tag` | UI image tag | `v2.4.0` |
+| `ui.image.tag` | UI image tag | `v2.4.2` |
 | `ui.image.pullPolicy` | UI image pull policy | `IfNotPresent` |
 | `ui.resources.requests.memory` | UI memory requests | `"512Mi"` |
 | `ui.resources.requests.cpu` | UI CPU requests | `"100m"` |
@@ -146,7 +146,7 @@ The following table lists the configurable parameters of the chart and their def
 | `glassflow-operator.controllerManager.manager.resources.requests.memory` | Operator memory requests | `64Mi` |
 | `glassflow-operator.controllerManager.serviceAccount.annotations` | Service account annotations | `{}` |
 | `glassflow-operator.glassflowComponents.ingestor.image.repository` | Ingestor component image repository | `glassflow-etl-ingestor` |
-| `glassflow-operator.glassflowComponents.ingestor.image.tag` | Ingestor component image tag | `v2.4.0` |
+| `glassflow-operator.glassflowComponents.ingestor.image.tag` | Ingestor component image tag | `v2.4.2` |
 | `glassflow-operator.glassflowComponents.ingestor.logLevel` | Ingestor component log level | `"INFO"` |
 | `glassflow-operator.glassflowComponents.ingestor.resources.requests.cpu` | Ingestor CPU requests | `1000m` |
 | `glassflow-operator.glassflowComponents.ingestor.resources.requests.memory` | Ingestor memory requests | `1Gi` |
@@ -154,7 +154,7 @@ The following table lists the configurable parameters of the chart and their def
 | `glassflow-operator.glassflowComponents.ingestor.resources.limits.memory` | Ingestor memory limits | `1.5Gi` |
 | `glassflow-operator.glassflowComponents.ingestor.affinity` | Node affinity for ingestor component | `{}` |
 | `glassflow-operator.glassflowComponents.join.image.repository` | Join component image repository | `glassflow-etl-join` |
-| `glassflow-operator.glassflowComponents.join.image.tag` | Join component image tag | `v2.4.0` |
+| `glassflow-operator.glassflowComponents.join.image.tag` | Join component image tag | `v2.4.2` |
 | `glassflow-operator.glassflowComponents.join.logLevel` | Join component log level | `"INFO"` |
 | `glassflow-operator.glassflowComponents.join.resources.requests.cpu` | Join CPU requests | `1000m` |
 | `glassflow-operator.glassflowComponents.join.resources.requests.memory` | Join memory requests | `1Gi` |
@@ -162,7 +162,7 @@ The following table lists the configurable parameters of the chart and their def
 | `glassflow-operator.glassflowComponents.join.resources.limits.memory` | Join memory limits | `1.5Gi` |
 | `glassflow-operator.glassflowComponents.join.affinity` | Node affinity for join component | `{}` |
 | `glassflow-operator.glassflowComponents.sink.image.repository` | Sink component image repository | `glassflow-etl-sink` |
-| `glassflow-operator.glassflowComponents.sink.image.tag` | Sink component image tag | `v2.4.0` |
+| `glassflow-operator.glassflowComponents.sink.image.tag` | Sink component image tag | `v2.4.2` |
 | `glassflow-operator.glassflowComponents.sink.logLevel` | Sink component log level | `"INFO"` |
 | `glassflow-operator.glassflowComponents.sink.resources.requests.cpu` | Sink CPU requests | `1000m` |
 | `glassflow-operator.glassflowComponents.sink.resources.requests.memory` | Sink memory requests | `1Gi` |
