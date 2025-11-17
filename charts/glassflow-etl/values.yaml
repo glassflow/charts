@@ -122,6 +122,25 @@ ui:
   #     value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8080"
   env: []
 
+  # Auth0 configuration for authentication
+  auth0:
+    # Enable or disable Auth0 authentication
+    enabled: false
+    # Profile route endpoint (default: /api/auth/me)
+    profileRoute: "/api/auth/me"
+    # Auth0 secret for session encryption
+    secret: ""
+    # Base URL of the application (default: http://localhost:8080)
+    appBaseUrl: "http://localhost:8080"
+    # Auth0 domain (e.g., your-tenant.auth0.com)
+    domain: ""
+    # Auth0 issuer base URL
+    issuerBaseUrl: ""
+    # Auth0 client ID
+    clientId: ""
+    # Auth0 client secret
+    clientSecret: ""
+
   # Kafka Kerberos Gateway sidecar configuration
   # This sidecar provides Kerberos authentication support for Kafka connections
   kafkaGateway:
