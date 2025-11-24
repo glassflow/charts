@@ -335,12 +335,12 @@ nats:
     resources:
       # Minimum resources required by NATS pods
       requests:
-        memory: "2Gi"    # Memory request - adjust based on your workload
-        cpu: "500m"      # CPU request - 500 millicores = 0.5 CPU cores
+        memory: "4Gi"    # Memory request - adjust based on your workload
+        cpu: "2000m"      # CPU request - 2000 millicores = 2.0 CPU cores
       # Maximum resources NATS pods can use
       limits:
         memory: "4Gi"    # Memory limit - adjust based on your workload
-        cpu: "1000m"     # CPU limit - 1000 millicores = 1.0 CPU cores
+        cpu: "2000m"     # CPU limit - 2000 millicores = 2.0 CPU cores
 
 # =============================================================================
 # INGRESS CONFIGURATION
