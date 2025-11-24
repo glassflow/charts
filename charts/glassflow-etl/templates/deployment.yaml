@@ -53,8 +53,10 @@ spec:
             - name: NEXT_PUBLIC_IN_DOCKER
               value: "false"
             - name: NEXT_PUBLIC_ANALYTICS_ENABLED
-              value: "{{ .Values.global.analytics.enabled }}"
+              value: "{{ .Values.global.usageStats.enabled }}"
             - name: NEXT_PUBLIC_AUTH0_ENABLED
+              value: "{{ .Values.ui.auth0.enabled }}"
+            - name: AUTH0_ENABLED
               value: "{{ .Values.ui.auth0.enabled }}"
             {{- if .Values.ui.auth0.enabled }}
             - name: NEXT_PUBLIC_PROFILE_ROUTE
