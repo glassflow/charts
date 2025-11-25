@@ -43,7 +43,7 @@ global:
 api:
   # Number of API replicas for high availability
   replicas: 1
-  logLevel: "INFO"
+  logLevel: "info"
   # Container image configuration for the API component
   image:
     # Docker image repository for the GlassFlow ETL backend
@@ -96,6 +96,7 @@ ui:
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
+  logLevel: "info"
   # Resource requirements and limits for the UI pods
   resources:
     # Minimum resources required by the UI pods

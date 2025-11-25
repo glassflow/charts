@@ -58,6 +58,20 @@ spec:
               value: "{{ .Values.ui.auth0.enabled }}"
             - name: AUTH0_ENABLED
               value: "{{ .Values.ui.auth0.enabled }}"
+            - name: NEXT_PUBLIC_OTEL_LOGS_ENABLED
+              value: "{{ .Values.global.observability.logs.enabled }}"
+            - name: NEXT_PUBLIC_OTEL_METRICS_ENABLED
+              value: "{{ .Values.global.observability.metrics.enabled }}"
+            - name: NEXT_PUBLIC_OTEL_SERVICE_NAME
+              value: "glassflow-ui"
+            - name: NEXT_PUBLIC_OTEL_SERVICE_VERSION
+              value: "{{ .Values.ui.image.tag }}"
+            - name: NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE
+              value: {{ .Release.Namespace }}            
+            - name: NEXT_PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://{{ .Release.Name }}-otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4318"
+            - name: NEXT_PUBLIC_LOG_LEVEL
+              value: "{{ .Values.ui.logLevel }}"
             {{- if .Values.ui.auth0.enabled }}
             - name: NEXT_PUBLIC_PROFILE_ROUTE
               value: "{{ .Values.ui.auth0.profileRoute | default "/api/auth/me" }}"
@@ -180,7 +194,7 @@ spec:
             - name: GLASSFLOW_OTEL_SERVICE_NAMESPACE
               value: {{ .Release.Namespace }}
             - name: GLASSFLOW_OTEL_SERVICE_VERSION
-              value: "{{ .Values.api.image.tag }}"          
+              value: "{{ .Values.api.image.tag }}"
             - name: GLASSFLOW_OTEL_LOGS_ENABLED
               value: "{{ .Values.global.observability.logs.enabled }}"
             - name: GLASSFLOW_OTEL_METRICS_ENABLED

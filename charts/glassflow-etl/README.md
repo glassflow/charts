@@ -93,9 +93,9 @@ The following table lists the configurable parameters of the chart and their def
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `api.replicas` | Number of API replicas | `1` |
-| `api.logLevel` | API log level | `"INFO"` |
+| `api.logLevel` | API log level | `"info"` |
 | `api.image.repository` | API image repository | `glassflow-etl-be` |
-| `api.image.tag` | API image tag | `v2.4.2` |
+| `api.image.tag` | API image tag | `v2.4.3` |
 | `api.image.pullPolicy` | API image pull policy | `IfNotPresent` |
 | `api.resources.requests.memory` | API memory requests | `"100Mi"` |
 | `api.resources.requests.cpu` | API CPU requests | `"100m"` |
@@ -111,8 +111,9 @@ The following table lists the configurable parameters of the chart and their def
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `ui.replicas` | Number of UI replicas | `1` |
+| `ui.logLevel` | UI log level | `"info"` |
 | `ui.image.repository` | UI image repository | `glassflow-etl-fe` |
-| `ui.image.tag` | UI image tag | `v2.4.2` |
+| `ui.image.tag` | UI image tag | `v2.4.3` |
 | `ui.image.pullPolicy` | UI image pull policy | `IfNotPresent` |
 | `ui.resources.requests.memory` | UI memory requests | `"512Mi"` |
 | `ui.resources.requests.cpu` | UI CPU requests | `"100m"` |
@@ -138,7 +139,7 @@ The following table lists the configurable parameters of the chart and their def
 |-----------|-------------|---------|
 | `glassflow-operator.controllerManager.replicas` | Number of operator replicas | `1` |
 | `glassflow-operator.controllerManager.manager.image.repository` | Operator image repository | `glassflow-etl-k8s-operator` |
-| `glassflow-operator.controllerManager.manager.image.tag` | Operator image tag | `v1.3.0` |
+| `glassflow-operator.controllerManager.manager.image.tag` | Operator image tag | `v1.3.1` |
 | `glassflow-operator.controllerManager.manager.image.pullPolicy` | Operator image pull policy | `IfNotPresent` |
 | `glassflow-operator.controllerManager.manager.resources.limits.cpu` | Operator CPU limits | `500m` |
 | `glassflow-operator.controllerManager.manager.resources.limits.memory` | Operator memory limits | `128Mi` |
@@ -146,7 +147,7 @@ The following table lists the configurable parameters of the chart and their def
 | `glassflow-operator.controllerManager.manager.resources.requests.memory` | Operator memory requests | `64Mi` |
 | `glassflow-operator.controllerManager.serviceAccount.annotations` | Service account annotations | `{}` |
 | `glassflow-operator.glassflowComponents.ingestor.image.repository` | Ingestor component image repository | `glassflow-etl-ingestor` |
-| `glassflow-operator.glassflowComponents.ingestor.image.tag` | Ingestor component image tag | `v2.4.2` |
+| `glassflow-operator.glassflowComponents.ingestor.image.tag` | Ingestor component image tag | `v2.4.3` |
 | `glassflow-operator.glassflowComponents.ingestor.logLevel` | Ingestor component log level | `"INFO"` |
 | `glassflow-operator.glassflowComponents.ingestor.resources.requests.cpu` | Ingestor CPU requests | `1000m` |
 | `glassflow-operator.glassflowComponents.ingestor.resources.requests.memory` | Ingestor memory requests | `1Gi` |
@@ -154,7 +155,7 @@ The following table lists the configurable parameters of the chart and their def
 | `glassflow-operator.glassflowComponents.ingestor.resources.limits.memory` | Ingestor memory limits | `1.5Gi` |
 | `glassflow-operator.glassflowComponents.ingestor.affinity` | Node affinity for ingestor component | `{}` |
 | `glassflow-operator.glassflowComponents.join.image.repository` | Join component image repository | `glassflow-etl-join` |
-| `glassflow-operator.glassflowComponents.join.image.tag` | Join component image tag | `v2.4.2` |
+| `glassflow-operator.glassflowComponents.join.image.tag` | Join component image tag | `v2.4.3` |
 | `glassflow-operator.glassflowComponents.join.logLevel` | Join component log level | `"INFO"` |
 | `glassflow-operator.glassflowComponents.join.resources.requests.cpu` | Join CPU requests | `1000m` |
 | `glassflow-operator.glassflowComponents.join.resources.requests.memory` | Join memory requests | `1Gi` |
@@ -162,7 +163,7 @@ The following table lists the configurable parameters of the chart and their def
 | `glassflow-operator.glassflowComponents.join.resources.limits.memory` | Join memory limits | `1.5Gi` |
 | `glassflow-operator.glassflowComponents.join.affinity` | Node affinity for join component | `{}` |
 | `glassflow-operator.glassflowComponents.sink.image.repository` | Sink component image repository | `glassflow-etl-sink` |
-| `glassflow-operator.glassflowComponents.sink.image.tag` | Sink component image tag | `v2.4.2` |
+| `glassflow-operator.glassflowComponents.sink.image.tag` | Sink component image tag | `v2.4.3` |
 | `glassflow-operator.glassflowComponents.sink.logLevel` | Sink component log level | `"INFO"` |
 | `glassflow-operator.glassflowComponents.sink.resources.requests.cpu` | Sink CPU requests | `1000m` |
 | `glassflow-operator.glassflowComponents.sink.resources.requests.memory` | Sink memory requests | `1Gi` |
@@ -210,10 +211,10 @@ The following table lists the configurable parameters of the chart and their def
 | `nats.config.jetstream.fileStore.pvc.enabled` | Enable PVC for file store | `true` |
 | `nats.config.jetstream.fileStore.pvc.size` | Size of file store PVC | `100Gi` |
 | `nats.config.jetstream.fileStore.pvc.storageClassName` | Storage class for file store | `""` |
-| `nats.config.resources.requests.memory` | NATS memory requests | `"2Gi"` |
-| `nats.config.resources.requests.cpu` | NATS CPU requests | `"500m"` |
+| `nats.config.resources.requests.memory` | NATS memory requests | `"4Gi"` |
+| `nats.config.resources.requests.cpu` | NATS CPU requests | `"2000m"` |
 | `nats.config.resources.limits.memory` | NATS memory limits | `"4Gi"` |
-| `nats.config.resources.limits.cpu` | NATS CPU limits | `"1000m"` |
+| `nats.config.resources.limits.cpu` | NATS CPU limits | `"2000m"` |
 
 ### Ingress Configuration
 
@@ -309,8 +310,16 @@ helm install glassflow-etl glassflow-etl-0.1.0.tgz --namespace <namespace> --set
      api:
        env:
          - name: GLASSFLOW_LOG_LEVEL
-           value: "DEBUG"
+           value: "debug"
      ```
+   - The UI component automatically sets the following OTEL-related environment variables:
+     - `NEXT_PUBLIC_OTEL_LOGS_ENABLED`: Set from `global.observability.logs.enabled`
+     - `NEXT_PUBLIC_OTEL_METRICS_ENABLED`: Set from `global.observability.metrics.enabled`
+     - `NEXT_PUBLIC_OTEL_SERVICE_NAME`: Set to `"glassflow-ui"`
+     - `NEXT_PUBLIC_OTEL_SERVICE_VERSION`: Set from `ui.image.tag`
+     - `NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE`: Set from the Helm release namespace
+     - `NEXT_PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT`: Set to the OTEL collector service endpoint
+     - `NEXT_PUBLIC_LOG_LEVEL`: Set from `ui.logLevel`
 
 7. Observability:
    - Metrics collection is enabled by default (`global.observability.metrics.enabled: true`)
