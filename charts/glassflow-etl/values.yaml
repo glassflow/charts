@@ -189,7 +189,7 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: v1.3.1
+        tag: v1.3.2
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: IfNotPresent
 
