@@ -47,21 +47,16 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          envFrom:
+            - configMapRef:
+                name: glassflow-ui-config
+          {{- if .Values.ui.env }}
           env:
-            - name: NEXT_PUBLIC_API_URL
-              value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8081"
-            - name: NEXT_PUBLIC_IN_DOCKER
-              value: "false"
-            - name: NEXT_PUBLIC_ANALYTICS_ENABLED
-              value: "{{ .Values.global.usageStats.enabled }}"
-            {{- if .Values.ui.kafkaGateway.enabled }}
-            - name: KAFKA_GATEWAY_URL
-              value: "http://localhost:{{ .Values.ui.kafkaGateway.port }}"
-            {{- end }}
             {{- range .Values.ui.env }}
             - name: {{ .name | quote }}
               value: {{ .value | quote }}
             {{- end }}
+          {{- end }}
         {{- if .Values.ui.kafkaGateway.enabled }}
         - name: kafka-gateway
           image: "{{ .Values.global.imageRegistry | default "" }}{{ .Values.ui.kafkaGateway.image.repository }}:{{ .Values.ui.kafkaGateway.image.tag }}"
@@ -144,33 +139,16 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          envFrom:
+            - configMapRef:
+                name: glassflow-api-config
+          {{- if .Values.api.env }}
           env:
-            - name: GLASSFLOW_LOG_FILE_PATH
-              value: "/tmp/logs/glassflow"
-            - name: GLASSFLOW_NATS_SERVER
-              value: "{{ .Values.global.nats.address | default (printf "nats://%s-nats.%s.svc.cluster.local:4222" .Release.Name .Release.Namespace) }}"
-            - name: GLASSFLOW_LOG_LEVEL
-              value: "{{ .Values.api.logLevel }}"
-            - name: GLASSFLOW_RUN_LOCAL
-              value: "false"
-            - name: GLASSFLOW_K8S_NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: GLASSFLOW_OTEL_SERVICE_NAME
-              value: "glassflow-api"
-            - name: GLASSFLOW_OTEL_SERVICE_NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: GLASSFLOW_OTEL_SERVICE_VERSION
-              value: "{{ .Values.api.image.tag }}"          
-            - name: GLASSFLOW_OTEL_LOGS_ENABLED
-              value: "{{ .Values.global.observability.logs.enabled }}"
-            - name: GLASSFLOW_OTEL_METRICS_ENABLED
-              value: "{{ .Values.global.observability.metrics.enabled }}"
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: "http://{{ .Release.Name }}-otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4318"
             {{- range .Values.api.env }}
             - name: {{ .name | quote }}
               value: {{ .value | quote }}
             {{- end }}
+          {{- end }}
           {{- with .Values.api.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}

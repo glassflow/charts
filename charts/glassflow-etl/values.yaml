@@ -43,13 +43,13 @@ global:
 api:
   # Number of API replicas for high availability
   replicas: 1
-  logLevel: "INFO"
+  logLevel: "info"
   # Container image configuration for the API component
   image:
     # Docker image repository for the GlassFlow ETL backend
     repository: glassflow-etl-be
     # Image tag/version to deploy
-    tag: v2.4.2
+    tag: v2.4.3
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -92,10 +92,11 @@ ui:
     # Docker image repository for the GlassFlow ETL frontend
     repository: glassflow-etl-fe
     # Image tag/version to deploy
-    tag: v2.4.2
+    tag: v2.4.3
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
+  logLevel: "info"
   # Resource requirements and limits for the UI pods
   resources:
     # Minimum resources required by the UI pods
@@ -121,6 +122,25 @@ ui:
   #   - name: NEXT_PUBLIC_API_URL
   #     value: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8080"
   env: []
+
+  # Auth0 configuration for authentication
+  auth0:
+    # Enable or disable Auth0 authentication
+    enabled: false
+    # Profile route endpoint (default: /api/auth/me)
+    profileRoute: "/api/auth/me"
+    # Auth0 secret for session encryption
+    secret: ""
+    # Base URL of the application (default: http://localhost:8080)
+    appBaseUrl: "http://localhost:8080"
+    # Auth0 domain (e.g., your-tenant.auth0.com)
+    domain: ""
+    # Auth0 issuer base URL
+    issuerBaseUrl: ""
+    # Auth0 client ID
+    clientId: ""
+    # Auth0 client secret
+    clientSecret: ""
 
   # Kafka Kerberos Gateway sidecar configuration
   # This sidecar provides Kerberos authentication support for Kafka connections
@@ -169,7 +189,7 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: v1.3.0
+        tag: v1.3.2
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: IfNotPresent
 
@@ -194,7 +214,7 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.4.2
+        tag: v2.4.3
       logLevel: "INFO"
       resources:
         requests:
@@ -208,7 +228,7 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.4.2
+        tag: v2.4.3
       logLevel: "INFO"
       resources:
         requests:
@@ -222,7 +242,7 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.4.2
+        tag: v2.4.3
       logLevel: "INFO"
       resources:
         requests:
@@ -316,12 +336,12 @@ nats:
     resources:
       # Minimum resources required by NATS pods
       requests:
-        memory: "2Gi"    # Memory request - adjust based on your workload
-        cpu: "500m"      # CPU request - 500 millicores = 0.5 CPU cores
+        memory: "4Gi"    # Memory request - adjust based on your workload
+        cpu: "2000m"      # CPU request - 2000 millicores = 2.0 CPU cores
       # Maximum resources NATS pods can use
       limits:
         memory: "4Gi"    # Memory limit - adjust based on your workload
-        cpu: "1000m"     # CPU limit - 1000 millicores = 1.0 CPU cores
+        cpu: "2000m"     # CPU limit - 2000 millicores = 2.0 CPU cores
 
 # =============================================================================
 # INGRESS CONFIGURATION
