@@ -1,0 +1,178 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "glassflow-etl.fullname" . }}-migration-{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+  annotations:
+    # Helm hook annotations
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    # Add revision to job name to allow multiple releases
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  # Don't restart on failure - let Helm handle retries
+  backoffLimit: 3
+  # Clean up completed jobs after 1 hour
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        # Wait for Postgres to be ready
+        - name: wait-for-postgres
+          image: postgres:{{ .Values.postgresql.image.tag | default "17-alpine" }}
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy | default "IfNotPresent" }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Waiting for PostgreSQL to be ready..."
+              
+              # Get connection details from secret
+              POSTGRES_HOST="${POSTGRES_HOST:-{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local}"
+              POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+              POSTGRES_USER="${POSTGRES_USER:-{{ .Values.postgresql.auth.username }}}"
+              POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-{{ .Values.postgresql.auth.password }}}"
+              POSTGRES_ADMIN_DB="${POSTGRES_ADMIN_DB:-postgres}"
+              
+              # Retry logic - check indefinitely until Postgres is ready
+              RETRY_DELAY=2
+              ATTEMPT=1
+              
+              while true; do
+                echo "Attempt $ATTEMPT: Checking PostgreSQL connection..."
+                if PGPASSWORD="$POSTGRES_PASSWORD" pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_ADMIN_DB" > /dev/null 2>&1; then
+                  echo "PostgreSQL is ready!"
+                  exit 0
+                fi
+                echo "PostgreSQL not ready yet, waiting ${RETRY_DELAY}s..."
+                sleep $RETRY_DELAY
+                ATTEMPT=$((ATTEMPT + 1))
+              done
+          env:
+            - name: POSTGRES_HOST
+              value: "{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local"
+            - name: POSTGRES_PORT
+              value: "{{ .Values.postgresql.service.port | default 5432 | toString }}"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-connection
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-connection
+                  key: password
+            - name: POSTGRES_ADMIN_DB
+              value: "postgres"
+      containers:
+        - name: migration
+          image: "{{ .Values.global.imageRegistry | default "" }}{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting database migration..."
+              
+              # Install required tools
+              apk add --no-cache git postgresql-client || \
+              (apt-get update && apt-get install -y git postgresql-client) || \
+              (yum install -y git postgresql) || true
+              
+              # Install golang-migrate
+              MIGRATE_VERSION="v4.19.1"
+              ARCH="amd64"
+              OS="linux"
+              
+              # Detect OS and architecture
+              if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
+                ARCH="arm64"
+              fi
+              
+              if [ -f /etc/alpine-release ]; then
+                OS="alpine"
+              elif [ -f /etc/debian_version ]; then
+                OS="linux"
+              elif [ -f /etc/redhat-release ]; then
+                OS="linux"
+              fi
+              
+              echo "Installing golang-migrate ${MIGRATE_VERSION} for ${OS}-${ARCH}..."
+              curl -L "https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.${OS}-${ARCH}.tar.gz" | tar xvz
+              chmod +x migrate
+              mv migrate /usr/local/bin/migrate || mv migrate /bin/migrate
+              
+              # Clone repository
+              REPO_URL="https://github.com/glassflow/clickhouse-etl.git"
+              REPO_BRANCH="{{ .Values.api.image.tag }}"
+              WORK_DIR="/tmp/migrations"
+              
+              echo "Cloning repository: ${REPO_URL} (branch: ${REPO_BRANCH})"
+              rm -rf "${WORK_DIR}"
+              git clone --depth 1 --branch "${REPO_BRANCH}" "${REPO_URL}" "${WORK_DIR}" || {
+                echo "Failed to clone branch ${REPO_BRANCH}, trying default branch..."
+                git clone --depth 1 "${REPO_URL}" "${WORK_DIR}"
+              }
+              
+              cd "${WORK_DIR}/glassflow-api/migrations"
+              
+              # Set up environment variables for migration script
+              export POSTGRES_HOST="${POSTGRES_HOST}"
+              export POSTGRES_PORT="${POSTGRES_PORT}"
+              export POSTGRES_USER="${POSTGRES_USER}"
+              export POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
+              export POSTGRES_DB="{{ .Values.postgresql.auth.database | default "glassflow_pipelines" }}"
+              export POSTGRES_ADMIN_DB="postgres"
+              
+              # Verify migration script exists
+              if [ ! -f "run-migrations.sh" ]; then
+                echo "ERROR: Migration script not found at $(pwd)/run-migrations.sh"
+                exit 1
+              fi
+              
+              # Make script executable
+              chmod +x run-migrations.sh
+              
+              # Run migration script
+              echo "Running migration script with database: ${POSTGRES_DB}..."
+              ./run-migrations.sh
+              
+              echo "Migration completed successfully!"
+          env:
+            - name: POSTGRES_HOST
+              value: "{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local"
+            - name: POSTGRES_PORT
+              value: "{{ .Values.postgresql.service.port | default 5432 | toString }}"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-connection
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-connection
+                  key: password
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+
