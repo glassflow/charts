@@ -78,7 +78,8 @@ PostgreSQL image
 */}}
 {{- define "postgresql.image" -}}
 {{- if .Values.global.imageRegistry }}
-{{- printf "%s/%s:%s" .Values.global.imageRegistry .Values.image.repository .Values.image.tag }}
+{{- $registry := .Values.global.imageRegistry | trimSuffix "/" }}
+{{- printf "%s/%s:%s" $registry .Values.image.repository .Values.image.tag }}
 {{- else }}
 {{- printf "%s:%s" .Values.image.repository .Values.image.tag }}
 {{- end }}
