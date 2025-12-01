@@ -1,0 +1,213 @@
+# Default values for postgresql.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# =============================================================================
+# GLOBAL SETTINGS
+# =============================================================================
+# Global settings that apply across all components of the chart
+global:
+  # Global image registry - if set, will be prepended to all image repositories
+  imageRegistry: ""
+  # Global storage class - if set, will be used for persistent volumes
+  storageClass: ""
+
+# =============================================================================
+# IMAGE CONFIGURATION
+# =============================================================================
+image:
+  # Docker image repository for PostgreSQL (official postgres image)
+  repository: postgres
+  # Image tag/version to deploy
+  tag: "17-alpine"
+  # Image pull policy: Always, IfNotPresent, or Never
+  pullPolicy: IfNotPresent
+
+# =============================================================================
+# REPLICA CONFIGURATION
+# =============================================================================
+# Number of PostgreSQL replicas (StatefulSet)
+# Note: PostgreSQL in this chart is configured for single instance
+# For production HA, consider using PostgreSQL operator or Patroni
+replicaCount: 1
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION
+# =============================================================================
+auth:
+  # Enable authentication
+  enabled: true
+  # PostgreSQL database name
+  database: "glassflow"
+  # PostgreSQL username for application
+  # Required when not using existingSecret
+  username: "glassflow"
+  # PostgreSQL password for application user
+  # Required when not using existingSecret
+  password: "glassflow@123"
+  # Use an existing secret for authentication credentials
+  # If enabled, the chart will use the existing secret instead of auth.username/auth.password
+  existingSecret:
+    # Enable use of existing secret
+    enabled: false
+    # Name of the existing secret
+    name: ""
+    # Keys in the existing secret that contain the credentials
+    keys:
+      # Key name for username in the existing secret
+      usernameKey: username
+      # Key name for password in the existing secret
+      passwordKey: password
+      # Key name for database name in the existing secret (optional, falls back to auth.database)
+      databaseKey: database
+
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+service:
+  # Service type: ClusterIP, NodePort, or LoadBalancer
+  type: ClusterIP
+  # Service port
+  port: 5432
+  # Target port (container port)
+  targetPort: 5432
+  # Service annotations
+  annotations: {}
+
+# =============================================================================
+# PERSISTENCE CONFIGURATION
+# =============================================================================
+persistence:
+  # Enable persistent storage
+  enabled: true
+  # Mount path for PostgreSQL volume (parent directory)
+  # Mount at parent directory to allow fsGroup to work correctly
+  mountPath: /var/lib/postgresql
+  # Sub path within the volume (optional)
+  # Using a subPath avoids issues with lost+found directory in new PVCs
+  # Note: subPath can cause permission issues - fsGroup doesn't apply to subdirectories
+  # If you need subPath, you'll need an init container to fix permissions
+  subPath: ""
+  # Data directory for PostgreSQL data (subdirectory within mountPath)
+  # PostgreSQL will create this directory with correct permissions
+  dataDir: /var/lib/postgresql/data
+  # Size of the persistent volume
+  size: 20Gi
+  # Storage class for the PVC (uses global.storageClass if empty)
+  storageClass: ""
+  # Access modes for the PVC
+  accessModes:
+    - ReadWriteOnce
+  # Use existing PVC (if set, will not create new PVC)
+  existingClaim: ""
+
+# =============================================================================
+# RESOURCE CONFIGURATION
+# =============================================================================
+resources:
+  # Minimum resources required by PostgreSQL pods
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  # Maximum resources PostgreSQL pods can use
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
+
+# =============================================================================
+# POSTGRESQL CONFIGURATION
+# =============================================================================
+# Additional PostgreSQL configuration arguments
+additionalArgs: []
+
+# PostgreSQL max_connections (set via command-line args or postgresql.conf)
+# To set max_connections, use additionalArgs or mount a custom postgresql.conf
+maxConnections: 100
+
+# =============================================================================
+# PROBE CONFIGURATION
+# =============================================================================
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 6
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 6
+
+# Custom probes (if enabled, will override default probes)
+customLivenessProbe: {}
+customReadinessProbe: {}
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+# Pod security context settings
+# Official postgres image runs as user 999 by default
+# Leave empty to use image defaults, or set fsGroup for volume ownership
+# Setting runAsUser at pod level can prevent directory creation during init
+podSecurityContext: {}
+
+# Container security context settings
+# Leave empty to use image defaults (runs as user 999)
+# Or customize as needed for your security requirements
+securityContext: {}
+
+# =============================================================================
+# SERVICE ACCOUNT CONFIGURATION
+# =============================================================================
+serviceAccount:
+  # Create a new service account
+  create: true
+  # Automatically mount the service account's API credentials
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # Name of the service account to use
+  name: ""
+
+# =============================================================================
+# POD CONFIGURATION
+# =============================================================================
+# Annotations to add to all pods
+podAnnotations: {}
+# Labels to add to all pods
+podLabels: {}
+# Annotations to add to the StatefulSet
+annotations: {}
+
+# Node selector for PostgreSQL pods
+nodeSelector: {}
+
+# Pod tolerations for scheduling
+tolerations: []
+
+# Pod affinity rules for scheduling
+affinity: {}
+
+# Topology spread constraints
+topologySpreadConstraints: []
+
+# Priority class name
+priorityClassName: ""
+
+# Image pull secrets
+imagePullSecrets: []
+
+# Init containers
+initContainers: []
+
+# Additional volume mounts
+additionalVolumeMounts: []
+
+# Additional volumes
+additionalVolumes: []
+

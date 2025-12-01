@@ -7,6 +7,7 @@ This repository contains the official Helm charts for Glassflow components.
 | Chart | Description |
 |-------|-------------|
 | [glassflow-etl](./charts/glassflow-etl) | Glassflow ETL component for deduplication and joins of kafka streams to clickhouse |
+| [postgresql](./charts/postgresql) | PostgreSQL database chart used by GlassFlow ETL as a dependency |
 
 ## Usage
 
