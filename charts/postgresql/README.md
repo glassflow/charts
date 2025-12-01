@@ -30,7 +30,6 @@ A Helm chart for PostgreSQL database used by GlassFlow ETL
 | auth.username | string | `"glassflow"` | PostgreSQL username for the application user. Required when `auth.existingSecret.enabled` is `false`. |
 | customLivenessProbe | object | `{}` |  |
 | customReadinessProbe | object | `{}` |  |
-| global.imageRegistry | string | `""` |  |
 | global.storageClass | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"postgres"` |  |
