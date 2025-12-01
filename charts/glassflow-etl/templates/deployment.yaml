@@ -142,10 +142,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: glassflow-api-config
+          {{- if .Values.api.env }}
           env:
-            - name: GLASSFLOW_DATABASE_URL
-              value: {{ .Values.global.postgres_connection_url | quote }}
-            {{- if .Values.api.env }}
             {{- range .Values.api.env }}
             - name: {{ .name | quote }}
               value: {{ .value | quote }}
