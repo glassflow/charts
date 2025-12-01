@@ -311,8 +311,9 @@ postgresql:
   auth:
     enabled: true
     database: "glassflow"
+    # Please update this for production deployments
     username: "glassflow"
-    password: "glassflow@123"
+    password: "glassflow123"
     existingSecret:
       enabled: false
       name: ""
