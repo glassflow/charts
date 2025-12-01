@@ -32,6 +32,11 @@ dependencies:
     repository: https://nats-io.github.io/k8s/helm/charts/
     condition: nats.enabled
     alias: nats
+  - name: postgresql
+    version: "0.1.0"
+    repository: https://charts.glassflow.dev/
+    condition: postgres.enabled
+    alias: postgres
 
 maintainers:
   - name: Glassflow

@@ -1,0 +1,48 @@
+{{- $usingExistingSecret := and .Values.auth.existingSecret.enabled .Values.auth.existingSecret.name }}
+{{- $connectionSecretName := printf "%s-connection" (include "postgresql.fullname" .) }}
+{{- $authSecretName := include "postgresql.secretName" . }}
+{{- if not $usingExistingSecret }}
+{{- if not .Values.auth.password }}
+WARNING: No password was set for the database user. A random password has been generated.
+         For production deployments, please set auth.password in values.yaml or via --set.
+{{- end }}
+{{- if not .Values.auth.username }}
+WARNING: No username was set. A random username has been generated.
+         For production deployments, please set auth.username in values.yaml or via --set.
+{{- end }}
+{{- end }}
+
+1. Get the PostgreSQL connection details:
+
+   export POSTGRES_HOST=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ $connectionSecretName }} -o jsonpath="{.data.host}" | base64 -d)
+   export POSTGRES_PORT=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ $connectionSecretName }} -o jsonpath="{.data.port}" | base64 -d)
+   export POSTGRES_DB=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ $connectionSecretName }} -o jsonpath="{.data.database}" | base64 -d)
+   export POSTGRES_USER=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ $authSecretName }} -o jsonpath="{.data.{{ if $usingExistingSecret }}{{ .Values.auth.existingSecret.keys.usernameKey | default "username" }}{{ else }}username{{ end }}}" | base64 -d)
+
+2. Get the PostgreSQL password:
+
+   export POSTGRES_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ $authSecretName }} -o jsonpath="{.data.{{ if $usingExistingSecret }}{{ .Values.auth.existingSecret.keys.passwordKey | default "password" }}{{ else }}password{{ end }}}" | base64 -d)
+
+3. Get the full PostgreSQL connection URL:
+{{- if not $usingExistingSecret }}
+   export POSTGRES_URL=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ $connectionSecretName }} -o jsonpath="{.data.connection-url}" | base64 -d)
+   echo "Connection URL: $POSTGRES_URL"
+{{- else }}
+   # Connection URL template (password should be retrieved from secret):
+   export POSTGRES_URL_TEMPLATE=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ $connectionSecretName }} -o jsonpath="{.data.connection-url-template}" | base64 -d)
+   echo "Connection URL template: $POSTGRES_URL_TEMPLATE"
+   echo "Replace <password> with actual password from secret {{ $authSecretName }}"
+{{- end }}
+
+3. Connect to PostgreSQL:
+
+   kubectl run postgresql-client --rm -it --restart='Never' --image postgres:{{ .Values.image.tag }} --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -p {{ .Values.service.port }}
+
+   Or use a local psql client:
+   psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -p $POSTGRES_PORT
+
+4. Check PostgreSQL status:
+
+   kubectl get statefulset --namespace {{ .Release.Namespace }} {{ include "postgresql.fullname" . }}
+   kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "postgresql.name" . }},app.kubernetes.io/instance={{ .Release.Name }}"
+

@@ -36,6 +36,11 @@ global:
 
   usageStats:
     enabled: true
+
+  # PostgreSQL connection URL
+  # Only used when postgres.enabled is false
+  # Format: postgresql://username:password@host:port/database  
+  postgres_connection_url: ""
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
@@ -282,6 +287,64 @@ natsPrometheusExporter:
     protocol: TCP
     name: http
 
+
+# =============================================================================
+# POSTGRESQL CONFIGURATION
+# =============================================================================
+# PostgreSQL database configuration
+# When enabled, the postgresql dependency chart will be deployed
+# When disabled, use global.postgres_connection_url to connect to an external PostgreSQL instance
+postgres:
+  # Enable or disable PostgreSQL deployment
+  # Set to false if you want to use an external PostgreSQL instance
+  enabled: false
+
+  # PostgreSQL configuration settings
+  # These values are passed to the postgresql dependency chart
+  image:
+    repository: postgres
+    tag: "17-alpine"
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  auth:
+    enabled: true
+    database: "glassflow"
+    username: "glassflow"
+    password: "glassflow@123"
+    existingSecret:
+      enabled: false
+      name: ""
+      keys:
+        usernameKey: username
+        passwordKey: password
+        databaseKey: database
+
+  service:
+    type: ClusterIP
+    port: 5432
+    targetPort: 5432
+    annotations: {}
+
+  persistence:
+    enabled: true
+    mountPath: /var/lib/postgresql
+    subPath: ""
+    dataDir: /var/lib/postgresql/data
+    size: 20Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    existingClaim: ""
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
 
 # =============================================================================
 # NATS CONFIGURATION

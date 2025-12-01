@@ -131,6 +131,21 @@ spec:
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
       {{- end }}
+      {{- if .Values.postgres.enabled }}
+      initContainers:
+        - name: wait-for-postgres
+          image: "busybox:1.35"
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL to be ready..."
+              until nc -z {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local 5432; do
+                echo "PostgreSQL not ready, waiting..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready!"
+      {{- end }}
       containers:
         - name: api
           image: "{{ .Values.global.imageRegistry | default "" }}{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
@@ -142,13 +157,23 @@ spec:
           envFrom:
             - configMapRef:
                 name: glassflow-api-config
-          {{- if .Values.api.env }}
           env:
+            {{- if .Values.postgres.enabled }}
+            - name: GLASSFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-connection
+                  key: connection-url
+            {{- else }}
+            - name: GLASSFLOW_DATABASE_URL
+              value: {{ .Values.global.postgres_connection_url | quote }}
+            {{- end }}
+            {{- if .Values.api.env }}
             {{- range .Values.api.env }}
             - name: {{ .name | quote }}
               value: {{ .value | quote }}
             {{- end }}
-          {{- end }}
+            {{- end }}
           {{- with .Values.api.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
