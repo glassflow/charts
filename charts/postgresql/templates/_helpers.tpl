@@ -74,18 +74,6 @@ Returns existing secret name if enabled, otherwise returns connection secret nam
 {{- end }}
 
 {{/*
-PostgreSQL image
-*/}}
-{{- define "postgresql.image" -}}
-{{- if .Values.global.imageRegistry }}
-{{- $registry := .Values.global.imageRegistry | trimSuffix "/" }}
-{{- printf "%s/%s:%s" $registry .Values.image.repository .Values.image.tag }}
-{{- else }}
-{{- printf "%s:%s" .Values.image.repository .Values.image.tag }}
-{{- end }}
-{{- end }}
-
-{{/*
 PostgreSQL environment variables
 Official postgres image uses: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, PGDATA
 */}}

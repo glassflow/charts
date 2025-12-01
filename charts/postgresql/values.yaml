@@ -7,8 +7,6 @@
 # =============================================================================
 # Global settings that apply across all components of the chart
 global:
-  # Global image registry - if set, will be prepended to all image repositories
-  imageRegistry: ""
   # Global storage class - if set, will be used for persistent volumes
   storageClass: ""
 
