@@ -39,10 +39,12 @@ auth:
   database: "glassflow"
   # PostgreSQL username for application
   # Required when not using existingSecret
+  # Please update this for production deployments
   username: "glassflow"
   # PostgreSQL password for application user
   # Required when not using existingSecret
-  password: "glassflow@123"
+  # Please update this for production deployments
+  password: "glassflow123"
   # Use an existing secret for authentication credentials
   # If enabled, the chart will use the existing secret instead of auth.username/auth.password
   existingSecret:
