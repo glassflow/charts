@@ -63,7 +63,7 @@ spec:
         - name: postgres
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: {{ template "postgresql.image" . }}
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: tcp-postgresql
