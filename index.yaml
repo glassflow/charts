@@ -578,6 +578,20 @@ entries:
   postgresql:
   - apiVersion: v2
     appVersion: "17"
+    created: "2025-12-01T15:28:36.264724554Z"
+    description: A Helm chart for PostgreSQL database used by GlassFlow ETL
+    digest: 61746c0099771a394b4a3f8e738b918437dc12b2d08368aff96a74b96b08584b
+    maintainers:
+    - email: help@glassflow.dev
+      name: Glassflow
+      url: https://glassflow.dev
+    name: postgresql
+    type: application
+    urls:
+    - https://github.com/glassflow/charts/releases/download/postgresql-0.1.1/postgresql-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: "17"
     created: "2025-12-01T15:04:45.22909332Z"
     description: A Helm chart for PostgreSQL database used by GlassFlow ETL
     digest: 5dc76b05d2a409eebc9b08aa2a71db1acbea6ef74a60897b72f123f62d7086a3
@@ -590,4 +604,4 @@ entries:
     urls:
     - https://github.com/glassflow/charts/releases/download/postgresql-0.1.0/postgresql-0.1.0.tgz
     version: 0.1.0
-generated: "2025-12-01T15:04:45.229176306Z"
+generated: "2025-12-01T15:28:36.264793132Z"
