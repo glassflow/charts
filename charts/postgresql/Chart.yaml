@@ -1,13 +1,12 @@
 apiVersion: v2
 name: postgresql
 description: A Helm chart for PostgreSQL database used by GlassFlow ETL
-
 # A chart can be either an 'application' or a 'library' chart.
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
-version: 0.1.3
+version: 0.1.4
 
 # This is the version number of the application being deployed.
 appVersion: "17"
@@ -16,4 +15,3 @@ maintainers:
   - name: Glassflow
     email: help@glassflow.dev
     url: https://glassflow.dev
-
