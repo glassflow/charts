@@ -69,7 +69,7 @@ Returns existing secret name if enabled, otherwise returns connection secret nam
 {{- if and .Values.auth.existingSecret.enabled .Values.auth.existingSecret.name }}
 {{- .Values.auth.existingSecret.name }}
 {{- else }}
-{{- printf "%s-connection" (include "postgresql.fullname" .) }}
+{{- "glassflow-postgresql" }}
 {{- end }}
 {{- end }}
 
