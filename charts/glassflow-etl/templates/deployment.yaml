@@ -22,10 +22,11 @@ spec:
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/ui-config: {{ include (print $.Template.BasePath "/ui-configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -114,10 +115,11 @@ spec:
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/api-config: {{ include (print $.Template.BasePath "/api-configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -173,7 +175,8 @@ spec:
                 sleep 2
               done
               echo "NATS is ready!"
-        {{- if .Values.postgresql.enabled }}
+      {{- end }}
+      {{- if or .Values.postgresql.enabled true }}
         - name: wait-for-migration
           image: "alpine/curl:latest"
           command:
@@ -290,7 +293,6 @@ spec:
                 echo "Unable to retrieve job status"
               fi
               exit 1
-        {{- end }}
       {{- end }}
       containers:
         - name: api

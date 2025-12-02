@@ -72,6 +72,15 @@ A Helm chart for Kubernetes
 | glassflow-operator.glassflowComponents.sink.resources.limits.memory | string | `"1.5Gi"` |  |
 | glassflow-operator.glassflowComponents.sink.resources.requests.cpu | string | `"1000m"` |  |
 | glassflow-operator.glassflowComponents.sink.resources.requests.memory | string | `"1Gi"` |  |
+| glassflow-operator.glassflowComponents.dedup.image.repository | string | `"glassflow-etl-dedup"` |  |
+| glassflow-operator.glassflowComponents.dedup.image.tag | string | `"v2.4.0"` |  |
+| glassflow-operator.glassflowComponents.dedup.logLevel | string | `"INFO"` |  |
+| glassflow-operator.glassflowComponents.dedup.resources.limits.cpu | string | `"2000m"` |  |
+| glassflow-operator.glassflowComponents.dedup.resources.limits.memory | string | `"4Gi"` |  |
+| glassflow-operator.glassflowComponents.dedup.resources.requests.cpu | string | `"1000m"` |  |
+| glassflow-operator.glassflowComponents.dedup.resources.requests.memory | string | `"1Gi"` |  |
+| glassflow-operator.glassflowComponents.dedup.storage.className | string | `""` |  |
+| glassflow-operator.glassflowComponents.dedup.storage.size | string | `"40Gi"` |  |
 | global.imageRegistry | string | `"ghcr.io/glassflow/"` |  |
 | global.nats.stream.maxAge | string | `"24h"` |  |
 | global.nats.stream.maxBytes | string | `"25GB"` |  |

@@ -18,4 +18,3 @@ data:
   GLASSFLOW_OTEL_LOGS_ENABLED: "{{ .Values.global.observability.logs.enabled }}"
   GLASSFLOW_OTEL_METRICS_ENABLED: "{{ .Values.global.observability.metrics.enabled }}"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://{{ .Release.Name }}-otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4318"
-
