@@ -36,10 +36,9 @@ global:
 
   usageStats:
     enabled: true
-  
   # PostgreSQL connection URL
   # Only used when postgresql.enabled is false
-  # Format: postgresql://username:password@host:port/database  
+  # Format: postgresql://username:password@host:port/database
   # postgres_connection_url: ""
 # =============================================================================
 # API COMPONENT CONFIGURATION
