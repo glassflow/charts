@@ -1,5 +1,5 @@
 {{- $usingExistingSecret := and .Values.auth.existingSecret.enabled .Values.auth.existingSecret.name }}
-{{- $connectionSecretName := printf "%s-connection" (include "postgresql.fullname" .) }}
+{{- $connectionSecretName := "glassflow-postgresql" }}
 {{- $authSecretName := include "postgresql.secretName" . }}
 {{- if not $usingExistingSecret }}
 {{- if not .Values.auth.password }}
