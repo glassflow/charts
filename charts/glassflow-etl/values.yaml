@@ -18,7 +18,7 @@ global:
         otlp: {}
   nats:
     # NATS address for the operator to connect to
-    # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local if not specified
+    # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222 if not specified
     # address: ""
     stream:
       maxAge: 24h

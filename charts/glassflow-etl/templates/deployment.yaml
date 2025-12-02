@@ -131,8 +131,9 @@ spec:
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
       {{- end }}
-      {{- if .Values.postgresql.enabled }}
+      {{- if or .Values.postgresql.enabled true }}
       initContainers:
+        {{- if .Values.postgresql.enabled }}
         - name: wait-for-postgres
           image: "busybox:1.35"
           command:
@@ -145,6 +146,33 @@ spec:
                 sleep 2
               done
               echo "PostgreSQL is ready!"
+        {{- end }}
+        {{- $natsAddress := .Values.global.nats.address | default (printf "nats://%s-nats.%s.svc.cluster.local:4222" .Release.Name .Release.Namespace) }}
+        - name: wait-for-nats
+          image: "busybox:1.35"
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for NATS to be ready..."
+              NATS_URL="{{ $natsAddress }}"
+              # Remove protocol prefix if present
+              NATS_HOST_PORT="${NATS_URL#nats://}"
+              NATS_HOST_PORT="${NATS_HOST_PORT#nats-secure://}"
+              # Extract host and port
+              if echo "$NATS_HOST_PORT" | grep -q ":"; then
+                NATS_HOST=$(echo "$NATS_HOST_PORT" | cut -d: -f1)
+                NATS_PORT=$(echo "$NATS_HOST_PORT" | cut -d: -f2)
+              else
+                NATS_HOST="$NATS_HOST_PORT"
+                NATS_PORT="4222"
+              fi
+              echo "Checking NATS at $NATS_HOST:$NATS_PORT..."
+              until nc -z "$NATS_HOST" "$NATS_PORT"; do
+                echo "NATS not ready, waiting..."
+                sleep 2
+              done
+              echo "NATS is ready!"
       {{- end }}
       containers:
         - name: api
