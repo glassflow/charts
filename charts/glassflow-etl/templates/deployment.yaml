@@ -162,7 +162,7 @@ spec:
             - name: GLASSFLOW_DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-postgresql-connection
+                  name: glassflow-postgresql
                   key: connection-url
             {{- else }}
             - name: GLASSFLOW_DATABASE_URL
