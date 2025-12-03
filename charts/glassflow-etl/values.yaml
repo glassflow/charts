@@ -62,11 +62,11 @@ api:
     # Minimum resources required by the API pods
     requests:
       memory: "100Mi"  # Memory request - adjust based on your workload
-      cpu: "100m"      # CPU request - 250 millicores = 0.25 CPU cores
+      cpu: "100m"      # CPU request - adjust based on your workload
     # Maximum resources the API pods can use
     limits:
       memory: "200Mi"    # Memory limit - adjust based on your workload
-      cpu: "250m"      # CPU limit - 500 millicores = 0.5 CPU cores
+      cpu: "250m"      # CPU limit - adjust based on your workload
 
   service:
     type: ClusterIP
@@ -193,7 +193,7 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: v1.3.2
+        tag: v1.4.0
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: IfNotPresent
 
@@ -222,11 +222,11 @@ glassflow-operator:
       logLevel: "INFO"
       resources:
         requests:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: 100m
+          memory: 100Mi
         limits:
-          cpu: 1500m
-          memory: 1.5Gi
+          cpu: 500m
+          memory: 750Mi
       # Node affinity for ingestor component (optional)
       affinity: {}
     join:
@@ -236,11 +236,11 @@ glassflow-operator:
       logLevel: "INFO"
       resources:
         requests:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: 100m
+          memory: 100Mi
         limits:
-          cpu: 1500m
-          memory: 1.5Gi
+          cpu: 500m
+          memory: 750Mi
       # Node affinity for join component (optional)
       affinity: {}
     sink:
@@ -250,10 +250,10 @@ glassflow-operator:
       logLevel: "INFO"
       resources:
         requests:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: 100m
+          memory: 100Mi
         limits:
-          cpu: 1500m
+          cpu: 500m
           memory: 1.5Gi
       # Node affinity for sink component (optional)
       affinity: {}
