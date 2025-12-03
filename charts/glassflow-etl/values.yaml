@@ -18,7 +18,7 @@ global:
         otlp: {}
   nats:
     # NATS address for the operator to connect to
-    # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local if not specified
+    # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222 if not specified
     # address: ""
     stream:
       maxAge: 24h
@@ -36,6 +36,10 @@ global:
 
   usageStats:
     enabled: true
+  # PostgreSQL connection URL
+  # Only used when postgresql.enabled is false
+  # Format: postgresql://username:password@host:port/database
+  # postgres_connection_url: ""
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
@@ -49,7 +53,7 @@ api:
     # Docker image repository for the GlassFlow ETL backend
     repository: glassflow-etl-be
     # Image tag/version to deploy
-    tag: v2.4.3
+    tag: v2.5.0
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -58,11 +62,11 @@ api:
     # Minimum resources required by the API pods
     requests:
       memory: "100Mi"  # Memory request - adjust based on your workload
-      cpu: "100m"      # CPU request - 250 millicores = 0.25 CPU cores
+      cpu: "100m"      # CPU request - adjust based on your workload
     # Maximum resources the API pods can use
     limits:
       memory: "200Mi"    # Memory limit - adjust based on your workload
-      cpu: "250m"      # CPU limit - 500 millicores = 0.5 CPU cores
+      cpu: "250m"      # CPU limit - adjust based on your workload
 
   service:
     type: ClusterIP
@@ -92,7 +96,7 @@ ui:
     # Docker image repository for the GlassFlow ETL frontend
     repository: glassflow-etl-fe
     # Image tag/version to deploy
-    tag: v2.4.3
+    tag: v2.5.0
     # Image pull policy: Always, IfNotPresent, or Never
     pullPolicy: IfNotPresent
 
@@ -189,7 +193,7 @@ glassflow-operator:
         # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: glassflow-etl-k8s-operator
         # Image tag/version to deploy
-        tag: v1.3.2
+        tag: v1.4.0
         # Image pull policy: Always, IfNotPresent, or Never
         pullPolicy: IfNotPresent
 
@@ -214,44 +218,60 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.4.3
+        tag: v2.5.0
       logLevel: "INFO"
       resources:
         requests:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: 100m
+          memory: 100Mi
         limits:
-          cpu: 1500m
-          memory: 1.5Gi
+          cpu: 500m
+          memory: 750Mi
       # Node affinity for ingestor component (optional)
       affinity: {}
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.4.3
+        tag: v2.5.0
       logLevel: "INFO"
       resources:
         requests:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: 100m
+          memory: 100Mi
         limits:
-          cpu: 1500m
-          memory: 1.5Gi
+          cpu: 500m
+          memory: 750Mi
       # Node affinity for join component (optional)
       affinity: {}
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.4.3
+        tag: v2.5.0
+      logLevel: "INFO"
+      resources:
+        requests:
+          cpu: 100m
+          memory: 100Mi
+        limits:
+          cpu: 500m
+          memory: 1.5Gi
+      # Node affinity for sink component (optional)
+      affinity: {}
+    dedup:
+      image:
+        repository: glassflow-etl-dedup
+        tag: v2.5.0
       logLevel: "INFO"
       resources:
         requests:
           cpu: 1000m
           memory: 1Gi
         limits:
-          cpu: 1500m
-          memory: 1.5Gi
-      # Node affinity for sink component (optional)
+          cpu: 2000m
+          memory: 4Gi
+      storage:
+        size: "40Gi"
+        className: ""
       affinity: {}
 # =============================================================================
 # NATS OPERATOR CONFIGURATION
@@ -282,6 +302,65 @@ natsPrometheusExporter:
     protocol: TCP
     name: http
 
+
+# =============================================================================
+# POSTGRESQL CONFIGURATION
+# =============================================================================
+# PostgreSQL database configuration
+# When enabled, the postgresql dependency chart will be deployed
+# When disabled, use global.postgres_connection_url to connect to an external PostgreSQL instance
+postgresql:
+  # Enable or disable PostgreSQL deployment
+  # Set to false if you want to use an external PostgreSQL instance
+  enabled: true
+
+  # PostgreSQL configuration settings
+  # These values are passed to the postgresql dependency chart
+  image:
+    repository: postgres
+    tag: "17-alpine"
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  auth:
+    enabled: true
+    database: "glassflow"
+    # Please update this for production deployments
+    username: "glassflow"
+    password: "glassflow123"
+    existingSecret:
+      enabled: false
+      name: ""
+      keys:
+        usernameKey: username
+        passwordKey: password
+        databaseKey: database
+
+  service:
+    type: ClusterIP
+    port: 5432
+    targetPort: 5432
+    annotations: {}
+
+  persistence:
+    enabled: true
+    mountPath: /var/lib/postgresql
+    subPath: ""
+    dataDir: /var/lib/postgresql/data
+    size: 20Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    existingClaim: ""
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
 
 # =============================================================================
 # NATS CONFIGURATION
