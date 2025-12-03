@@ -11,7 +11,7 @@ metadata:
     # Use post-install/post-upgrade to ensure PostgreSQL is installed first
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "5"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   # Don't restart on failure - let Helm handle retries
   backoffLimit: 3

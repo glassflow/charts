@@ -235,11 +235,12 @@ spec:
               MAX_WAIT=1800  # 30 minutes
               ELAPSED=0
               while [ $ELAPSED -lt $MAX_WAIT ]; do
-                # Check if job still exists (might be deleted by hook-delete-policy)
+                # Check if job still exists (should exist unless deleted manually or TTL expired)
                 if ! check_job_exists; then
-                  echo "⚠ Migration job was deleted (likely due to hook-delete-policy: hook-succeeded)"
-                  echo "  This typically means the job completed successfully and was cleaned up."
-                  echo "  Proceeding with API startup..."
+                  echo "⚠ Migration job no longer exists"
+                  echo "  This could mean the job was deleted manually or TTL expired (1 hour)."
+                  echo "  If migrations completed, proceeding with API startup..."
+                  echo "  WARNING: This may indicate the job failed or was interrupted."
                   exit 0
                 fi
 
