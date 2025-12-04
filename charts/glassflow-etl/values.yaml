@@ -22,7 +22,7 @@ global:
     # address: ""
     stream:
       maxAge: 24h
-      maxBytes: 25GB
+      maxBytes: 10GB
 
   # Pipelines namespace configuration
   pipelines:
@@ -45,21 +45,13 @@ global:
 # =============================================================================
 # Backend API service configuration for the GlassFlow ETL application
 api:
-  # Number of API replicas for high availability
   replicas: 1
   logLevel: "info"
-  # Container image configuration for the API component
   image:
-    # Docker image repository for the GlassFlow ETL backend
     repository: glassflow-etl-be
-    # Image tag/version to deploy
-    tag: v2.5.0
-    # Image pull policy: Always, IfNotPresent, or Never
+    tag: v2.5.1
     pullPolicy: IfNotPresent
-
-  # Resource requirements and limits for the API pods
   resources:
-    # Minimum resources required by the API pods
     requests:
       memory: "100Mi"  # Memory request - adjust based on your workload
       cpu: "100m"      # CPU request - adjust based on your workload
@@ -88,29 +80,19 @@ api:
 # =============================================================================
 # Frontend UI service configuration for the GlassFlow ETL application
 ui:
-  # Number of UI replicas for high availability
   replicas: 1
-
-  # Container image configuration for the UI component
   image:
-    # Docker image repository for the GlassFlow ETL frontend
     repository: glassflow-etl-fe
-    # Image tag/version to deploy
-    tag: v2.5.0
-    # Image pull policy: Always, IfNotPresent, or Never
+    tag: v2.5.1
     pullPolicy: IfNotPresent
-
   logLevel: "info"
-  # Resource requirements and limits for the UI pods
   resources:
-    # Minimum resources required by the UI pods
     requests:
-      memory: "512Mi"  # Memory request - adjust based on your workload
-      cpu: "100m"      # CPU request - 100 millicores = 0.1 CPU cores
-    # Maximum resources the UI pods can use
+      memory: "512Mi"
+      cpu: "100m"
     limits:
-      memory: "1Gi"    # Memory limit - adjust based on your workload
-      cpu: "200m"      # CPU limit - 200 millicores = 0.2 CPU cores
+      memory: "1Gi"
+      cpu: "200m"
 
   service:
     type: ClusterIP
@@ -149,22 +131,12 @@ ui:
   # Kafka Kerberos Gateway sidecar configuration
   # This sidecar provides Kerberos authentication support for Kafka connections
   kafkaGateway:
-    # Enable or disable the Kafka Kerberos Gateway sidecar
-    # Set to true if you need to connect to Kerberos-secured Kafka clusters
     enabled: true
-
-    # Container image configuration for the gateway sidecar
     image:
-      # Docker image repository for the Kafka Kerberos Gateway
       repository: kafka-kerberos-gateway
-      # Image tag/version to deploy
       tag: latest
-      # Image pull policy: Always, IfNotPresent, or Never
       pullPolicy: IfNotPresent
-
-    # Resource requirements and limits for the gateway sidecar
     resources:
-      # Minimum resources required by the gateway sidecar
       requests:
         memory: "128Mi"  # Memory request - gateway is lightweight
         cpu: "50m"       # CPU request - 50 millicores = 0.05 CPU cores
@@ -183,42 +155,27 @@ ui:
 glassflow-operator:
   # Operator deployment configuration
   controllerManager:
-    # Number of operator replicas for high availability
     replicas: 1
-
-    # Operator manager configuration
     manager:
-      # Container image configuration for the operator
       image:
-        # Docker image repository for the GlassFlow ETL Kubernetes operator
         repository: glassflow-etl-k8s-operator
-        # Image tag/version to deploy
-        tag: v1.4.0
-        # Image pull policy: Always, IfNotPresent, or Never
+        tag: v1.4.1
         pullPolicy: IfNotPresent
-
-      # Resource requirements and limits for the operator pods
       resources:
-        # Maximum resources the operator pods can use
         limits:
-          cpu: 500m      # CPU limit - 500 millicores = 0.5 CPU cores
-          memory: 128Mi  # Memory limit - adjust based on your workload
-        # Minimum resources required by the operator pods
+          cpu: 500m
+          memory: 128Mi
         requests:
-          cpu: 10m       # CPU request - 10 millicores = 0.01 CPU cores
-          memory: 64Mi   # Memory request - adjust based on your workload
-
-    # Service account configuration for the operator
+          cpu: 10m
+          memory: 64Mi
     serviceAccount:
-      # Annotations to add to the operator service account
-      # Useful for IAM roles, OIDC providers, etc.
       annotations: {}
 
   glassflowComponents:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.5.0
+        tag: v2.5.1
       logLevel: "INFO"
       resources:
         requests:
@@ -232,7 +189,7 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.5.0
+        tag: v2.5.1
       logLevel: "INFO"
       resources:
         requests:
@@ -246,7 +203,7 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.5.0
+        tag: v2.5.1
       logLevel: "INFO"
       resources:
         requests:
@@ -260,7 +217,7 @@ glassflow-operator:
     dedup:
       image:
         repository: glassflow-etl-dedup
-        tag: v2.5.0
+        tag: v2.5.1
       logLevel: "INFO"
       resources:
         requests:
@@ -283,7 +240,6 @@ natsPrometheusExporter:
     repository: natsio/prometheus-nats-exporter
     tag: 0.17.3
     pullPolicy: IfNotPresent
-  # Exporter metrics configuration
   metrics:
     accstatz: true
     connz: true
@@ -294,7 +250,6 @@ natsPrometheusExporter:
     routez: true
     subz: true
     varz: true
-  # Service configuration
   service:
     type: ClusterIP
     port: 80
@@ -313,7 +268,6 @@ postgresql:
   # Enable or disable PostgreSQL deployment
   # Set to false if you want to use an external PostgreSQL instance
   enabled: true
-
   # PostgreSQL configuration settings
   # These values are passed to the postgresql dependency chart
   image:
@@ -322,7 +276,6 @@ postgresql:
     pullPolicy: IfNotPresent
 
   replicaCount: 1
-
   auth:
     enabled: true
     database: "glassflow"
@@ -345,19 +298,11 @@ postgresql:
 
   persistence:
     enabled: true
-    mountPath: /var/lib/postgresql
-    subPath: ""
-    dataDir: /var/lib/postgresql/data
-    size: 20Gi
-    storageClass: ""
-    accessModes:
-      - ReadWriteOnce
-    existingClaim: ""
-
+    size: 10Gi
   resources:
     requests:
       memory: "512Mi"
-      cpu: "250m"
+      cpu: "100m"
     limits:
       memory: "2Gi"
       cpu: "1000m"
@@ -370,57 +315,31 @@ nats:
   # Enable or disable NATS deployment
   # Set to false if you want to use an external NATS instance
   enabled: true
-
-  # NATS configuration settings
-  # Note: Node selector for NATS should be set under podTemplate.merge.spec.nodeSelector
   config:
-    # NATS clustering configuration for high availability
     cluster:
-      # Enable NATS clustering (recommended for production)
       enabled: true
-      # Port for cluster communication between NATS nodes
       port: 6222
-      # Number of NATS replicas
-      # IMPORTANT: Must be 2 or higher when JetStream is enabled
       replicas: 3
-
-    # JetStream configuration for persistent messaging
     jetstream:
-      # Enable JetStream for persistent message storage
       enabled: true
-
-      # Memory store configuration (fast but non-persistent)
       memoryStore:
-        # Enable memory-based storage (not recommended for production)
         enabled: false
-        # Maximum size of memory store
         maxSize: 1Gi
-
-      # File store configuration (persistent but slower)
       fileStore:
-        # Enable file-based storage (recommended for production)
         enabled: true
-        # Directory for storing JetStream data
         dir: /data
-        # Persistent volume claim configuration
         pvc:
-          # Enable PVC for persistent storage
           enabled: true
-          # Size of the persistent volume
           size: 100Gi
-          # Storage class for the PVC (uses global.storageClass if empty)
           storageClassName: ""
 
-    # Resource requirements and limits for NATS pods
     resources:
-      # Minimum resources required by NATS pods
       requests:
-        memory: "4Gi"    # Memory request - adjust based on your workload
-        cpu: "2000m"      # CPU request - 2000 millicores = 2.0 CPU cores
-      # Maximum resources NATS pods can use
+        memory: "4Gi"
+        cpu: "2000m"
       limits:
-        memory: "4Gi"    # Memory limit - adjust based on your workload
-        cpu: "2000m"     # CPU limit - 2000 millicores = 2.0 CPU cores
+        memory: "4Gi"
+        cpu: "2000m"
 
 # =============================================================================
 # INGRESS CONFIGURATION
