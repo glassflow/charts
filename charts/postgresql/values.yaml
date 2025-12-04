@@ -83,9 +83,9 @@ persistence:
   # Mount path for PostgreSQL volume
   # Mount at /var/lib/postgresql/data to override the Docker image's VOLUME declaration
   mountPath: /var/lib/postgresql/data
-  # Sub path within the volume (optional)  
+  # Sub path within the volume (optional)
   subPath: ""
-  # Data subdirectory name within mountPath  
+  # Data subdirectory name within mountPath
   dataSubDir: "pgdata"
   # Size of the persistent volume
   size: 20Gi
