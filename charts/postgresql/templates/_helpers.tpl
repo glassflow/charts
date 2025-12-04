@@ -100,7 +100,7 @@ Official postgres image uses: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, PGD
   value: {{ .Values.auth.database | default "glassflow" | quote }}
 {{- end }}
 - name: PGDATA
-  value: {{ .Values.persistence.dataDir | quote }}
+  value: {{ printf "%s/%s" .Values.persistence.mountPath (.Values.persistence.dataSubDir | default "pgdata") | quote }}
 {{- end }}
 
 {{/*

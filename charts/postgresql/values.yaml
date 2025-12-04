@@ -80,17 +80,13 @@ service:
 persistence:
   # Enable persistent storage
   enabled: true
-  # Mount path for PostgreSQL volume (parent directory)
-  # Mount at parent directory to allow fsGroup to work correctly
-  mountPath: /var/lib/postgresql
-  # Sub path within the volume (optional)
-  # Using a subPath avoids issues with lost+found directory in new PVCs
-  # Note: subPath can cause permission issues - fsGroup doesn't apply to subdirectories
-  # If you need subPath, you'll need an init container to fix permissions
+  # Mount path for PostgreSQL volume
+  # Mount at /var/lib/postgresql/data to override the Docker image's VOLUME declaration
+  mountPath: /var/lib/postgresql/data
+  # Sub path within the volume (optional)  
   subPath: ""
-  # Data directory for PostgreSQL data (subdirectory within mountPath)
-  # PostgreSQL will create this directory with correct permissions
-  dataDir: /var/lib/postgresql/data
+  # Data subdirectory name within mountPath  
+  dataSubDir: "pgdata"
   # Size of the persistent volume
   size: 20Gi
   # Storage class for the PVC (uses global.storageClass if empty)
