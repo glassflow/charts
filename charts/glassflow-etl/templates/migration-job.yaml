@@ -6,10 +6,8 @@ metadata:
   labels:
     {{- include "glassflow-etl.labels" . | nindent 4 }}
     app.kubernetes.io/component: migration
-  annotations:
-    # Helm hook annotations
-    # Use post-install/post-upgrade to ensure PostgreSQL is installed first
-    "helm.sh/hook": post-install,post-upgrade
+  annotations:    
+    "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "5"
     "helm.sh/hook-delete-policy": before-hook-creation
 spec:
