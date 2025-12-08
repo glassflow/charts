@@ -77,7 +77,7 @@ spec:
               
               CHART_VERSION="{{ .Chart.Version }}"
               API_IMAGE_TAG="{{ .Values.api.image.tag }}"
-              OPERATOR_IMAGE_TAG="{{ .Values.glassflow-operator.controllerManager.manager.image.tag }}"
+              OPERATOR_IMAGE_TAG="{{ index .Values "glassflow-operator" "controllerManager" "manager" "image" "tag" }}"
               UI_IMAGE_TAG="{{ .Values.ui.image.tag }}"
               METRICS_ENABLED="{{ .Values.global.observability.metrics.enabled }}"
               LOGS_ENABLED="{{ .Values.global.observability.logs.enabled }}"
@@ -89,10 +89,10 @@ spec:
               API_CPU_LIM="{{ .Values.api.resources.limits.cpu }}"
               API_MEM_LIM="{{ .Values.api.resources.limits.memory }}"
               
-              OPERATOR_CPU_REQ="{{ .Values.glassflow-operator.controllerManager.manager.resources.requests.cpu }}"
-              OPERATOR_MEM_REQ="{{ .Values.glassflow-operator.controllerManager.manager.resources.requests.memory }}"
-              OPERATOR_CPU_LIM="{{ .Values.glassflow-operator.controllerManager.manager.resources.limits.cpu }}"
-              OPERATOR_MEM_LIM="{{ .Values.glassflow-operator.controllerManager.manager.resources.limits.memory }}"
+              OPERATOR_CPU_REQ="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "requests" "cpu" }}"
+              OPERATOR_MEM_REQ="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "requests" "memory" }}"
+              OPERATOR_CPU_LIM="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "limits" "cpu" }}"
+              OPERATOR_MEM_LIM="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "limits" "memory" }}"
               
               TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
               

@@ -69,7 +69,7 @@ spec:
               
               CHART_VERSION="{{ .Chart.Version }}"
               API_IMAGE_TAG="{{ .Values.api.image.tag }}"
-              OPERATOR_IMAGE_TAG="{{ .Values.global.operator.image.tag | default "dev" }}"
+              OPERATOR_IMAGE_TAG="{{ index .Values "glassflow-operator" "controllerManager" "manager" "image" "tag" }}"
               UI_IMAGE_TAG="{{ .Values.ui.image.tag }}"
               
               TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
