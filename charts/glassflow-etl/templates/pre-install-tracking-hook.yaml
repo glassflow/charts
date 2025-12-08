@@ -1,0 +1,199 @@
+{{- if .Values.global.tracking.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "glassflow-etl.fullname" . }}-tracking-pre-install-{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tracking
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: tracking
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
+      containers:
+        - name: tracking-hook
+          image: alpine/curl:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              apk add --no-cache jq uuidgen >/dev/null 2>&1
+              
+              INSTALLATION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+              TRACKING_ENDPOINT="{{ .Values.global.tracking.endpoint }}"
+              TRACKING_USERNAME="{{ .Values.global.tracking.username }}"
+              TRACKING_PASSWORD="{{ .Values.global.tracking.password }}"
+              
+              if [ -z "$TRACKING_USERNAME" ] || [ -z "$TRACKING_PASSWORD" ]; then
+                echo "Tracking credentials not provided, skipping tracking"
+                exit 0
+              fi
+              
+              KUBE_API="https://kubernetes.default.svc"
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              NAMESPACE="{{ .Release.Namespace }}"
+              SECRET_NAME="{{ .Release.Name }}-tracking-config"
+              
+              echo "Getting auth token..."
+              AUTH_RESP=$(curl -sS -X POST \
+                "$TRACKING_ENDPOINT/auth/login" \
+                -H "Content-Type: application/json" \
+                -H "accept: application/json" \
+                -d "{\"username\":\"$TRACKING_USERNAME\",\"password\":\"$TRACKING_PASSWORD\"}")
+              
+              ACCESS_TOKEN=$(echo "$AUTH_RESP" | jq -r '.access_token // empty')
+              if [ -z "$ACCESS_TOKEN" ]; then
+                echo "Failed to get access token"
+                exit 1
+              fi
+              
+              echo "Detecting cluster info..."
+              CLUSTER_PROVIDER="unknown"
+              if curl -sS --max-time 2 -f -H "Metadata-Flavor: Google" http://169.254.169.254/computeMetadata/v1/instance/zone >/dev/null 2>&1; then
+                CLUSTER_PROVIDER="GCP"
+              elif curl -sS --max-time 2 -f http://169.254.169.254/latest/meta-data/instance-id >/dev/null 2>&1; then
+                CLUSTER_PROVIDER="AWS"
+              elif curl -sS --max-time 2 -f -H "Metadata: true" http://169.254.169.254/metadata/instance?api-version=2021-02-01 >/dev/null 2>&1; then
+                CLUSTER_PROVIDER="Azure"
+              fi
+              
+              K8S_VERSION=$(curl -sS --cacert "$CA_CERT" -H "Authorization: Bearer $TOKEN" \
+                "$KUBE_API/version" | jq -r '.gitVersion // "unknown"')
+              
+              CHART_VERSION="{{ .Chart.Version }}"
+              API_IMAGE_TAG="{{ .Values.api.image.tag }}"
+              OPERATOR_IMAGE_TAG="{{ .Values.glassflow-operator.controllerManager.manager.image.tag }}"
+              UI_IMAGE_TAG="{{ .Values.ui.image.tag }}"
+              METRICS_ENABLED="{{ .Values.global.observability.metrics.enabled }}"
+              LOGS_ENABLED="{{ .Values.global.observability.logs.enabled }}"
+              NATS_ENABLED="true"
+              NATS_REPLICAS="3"
+              
+              API_CPU_REQ="{{ .Values.api.resources.requests.cpu }}"
+              API_MEM_REQ="{{ .Values.api.resources.requests.memory }}"
+              API_CPU_LIM="{{ .Values.api.resources.limits.cpu }}"
+              API_MEM_LIM="{{ .Values.api.resources.limits.memory }}"
+              
+              OPERATOR_CPU_REQ="{{ .Values.glassflow-operator.controllerManager.manager.resources.requests.cpu }}"
+              OPERATOR_MEM_REQ="{{ .Values.glassflow-operator.controllerManager.manager.resources.requests.memory }}"
+              OPERATOR_CPU_LIM="{{ .Values.glassflow-operator.controllerManager.manager.resources.limits.cpu }}"
+              OPERATOR_MEM_LIM="{{ .Values.glassflow-operator.controllerManager.manager.resources.limits.memory }}"
+              
+              TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+              
+              EVENT_PAYLOAD=$(jq -n \
+                --arg inst_id "$INSTALLATION_ID" \
+                --arg ts "$TIMESTAMP" \
+                --arg chart_ver "$CHART_VERSION" \
+                --arg api_tag "$API_IMAGE_TAG" \
+                --arg op_tag "$OPERATOR_IMAGE_TAG" \
+                --arg ui_tag "$UI_IMAGE_TAG" \
+                --arg metrics "$METRICS_ENABLED" \
+                --arg logs "$LOGS_ENABLED" \
+                --arg nats "$NATS_ENABLED" \
+                --arg nats_repl "$NATS_REPLICAS" \
+                --arg provider "$CLUSTER_PROVIDER" \
+                --arg k8s_ver "$K8S_VERSION" \
+                --arg api_cpu_req "$API_CPU_REQ" \
+                --arg api_mem_req "$API_MEM_REQ" \
+                --arg api_cpu_lim "$API_CPU_LIM" \
+                --arg api_mem_lim "$API_MEM_LIM" \
+                --arg op_cpu_req "$OPERATOR_CPU_REQ" \
+                --arg op_mem_req "$OPERATOR_MEM_REQ" \
+                --arg op_cpu_lim "$OPERATOR_CPU_LIM" \
+                --arg op_mem_lim "$OPERATOR_MEM_LIM" \
+                '{
+                  "installation_id": $inst_id,
+                  "event_name": "helm_install",
+                  "event_source": "helm",
+                  "timestamp": $ts,
+                  "properties": {
+                    "chart_version": $chart_ver,
+                    "api_image_tag": $api_tag,
+                    "operator_image_tag": $op_tag,
+                    "ui_image_tag": $ui_tag,
+                    "metrics_enabled": ($metrics == "true"),
+                    "logs_enabled": ($logs == "true"),
+                    "nats_enabled": ($nats == "true"),
+                    "nats_replicas": ($nats_repl | tonumber),
+                    "cluster_provider": $provider,
+                    "k8s_version": $k8s_ver,
+                    "api_resources": {
+                      "cpu_request": $api_cpu_req,
+                      "memory_request": $api_mem_req,
+                      "cpu_limit": $api_cpu_lim,
+                      "memory_limit": $api_mem_lim
+                    },
+                    "operator_resources": {
+                      "cpu_request": $op_cpu_req,
+                      "memory_request": $op_mem_req,
+                      "cpu_limit": $op_cpu_lim,
+                      "memory_limit": $op_mem_lim
+                    }
+                  }
+                }')
+              
+              echo "Sending helm_install event..."
+              TRACK_RESP=$(curl -sS -w "\n%{http_code}" -X POST \
+                "$TRACKING_ENDPOINT/track" \
+                -H "Content-Type: application/json" \
+                -H "accept: application/json" \
+                -H "Authorization: Bearer $ACCESS_TOKEN" \
+                -d "$EVENT_PAYLOAD")
+              
+              HTTP_CODE=$(echo "$TRACK_RESP" | tail -n1)
+              BODY=$(echo "$TRACK_RESP" | sed '$d')
+              
+              if [ "$HTTP_CODE" != "200" ]; then
+                echo "Failed to send tracking event: HTTP $HTTP_CODE"
+                echo "$BODY"
+                exit 1
+              fi
+              
+              echo "Creating tracking secret..."
+              SECRET_DATA=$(jq -n \
+                --arg inst_id "$INSTALLATION_ID" \
+                --arg endpoint "$TRACKING_ENDPOINT" \
+                --arg username "$TRACKING_USERNAME" \
+                --arg password "$TRACKING_PASSWORD" \
+                '{
+                  "installation_id": $inst_id,
+                  "tracking_endpoint": $endpoint,
+                  "tracking_username": $username,
+                  "tracking_password": $password
+                }')
+              
+              curl -sS --cacert "$CA_CERT" -X PATCH \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Content-Type: application/merge-patch+json" \
+                -d "$(echo "$SECRET_DATA" | jq '{data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
+                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" || \
+              curl -sS --cacert "$CA_CERT" -X POST \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "$(echo "$SECRET_DATA" | jq '{kind: "Secret", apiVersion: "v1", metadata: {name: "'"$SECRET_NAME"'", namespace: "'"$NAMESPACE"'"}, type: "Opaque", data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
+                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets"
+              
+              echo "Tracking setup completed"
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+{{- end }}
+

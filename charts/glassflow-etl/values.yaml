@@ -36,6 +36,11 @@ global:
 
   usageStats:
     enabled: true
+  tracking:
+    enabled: true
+    endpoint: "https://tracking.glassflow.dev/api/v1"
+    username: ""
+    password: ""
   # PostgreSQL connection URL
   # Only used when postgresql.enabled is false
   # Format: postgresql://username:password@host:port/database

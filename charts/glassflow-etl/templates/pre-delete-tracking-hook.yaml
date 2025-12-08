@@ -1,0 +1,107 @@
+{{- if .Values.global.tracking.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "glassflow-etl.fullname" . }}-tracking-pre-delete-{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tracking
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: tracking
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
+      containers:
+        - name: tracking-hook
+          image: alpine/curl:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              apk add --no-cache jq >/dev/null 2>&1
+              
+              KUBE_API="https://kubernetes.default.svc"
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              NAMESPACE="{{ .Release.Namespace }}"
+              SECRET_NAME="{{ .Release.Name }}-tracking-config"
+              
+              echo "Reading tracking secret..."
+              SECRET_JSON=$(curl -sS --cacert "$CA_CERT" \
+                -H "Authorization: Bearer $TOKEN" \
+                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
+              
+              INSTALLATION_ID=$(echo "$SECRET_JSON" | jq -r '.data.installation_id // empty' | base64 -d)
+              TRACKING_ENDPOINT=$(echo "$SECRET_JSON" | jq -r '.data.tracking_endpoint // empty' | base64 -d)
+              TRACKING_USERNAME=$(echo "$SECRET_JSON" | jq -r '.data.tracking_username // empty' | base64 -d)
+              TRACKING_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.data.tracking_password // empty' | base64 -d)
+              
+              if [ -z "$INSTALLATION_ID" ] || [ -z "$TRACKING_ENDPOINT" ] || [ -z "$TRACKING_USERNAME" ] || [ -z "$TRACKING_PASSWORD" ]; then
+                echo "Tracking secret incomplete, skipping"
+                exit 0
+              fi
+              
+              echo "Getting auth token..."
+              AUTH_RESP=$(curl -sS -X POST \
+                "$TRACKING_ENDPOINT/auth/login" \
+                -H "Content-Type: application/json" \
+                -H "accept: application/json" \
+                -d "{\"username\":\"$TRACKING_USERNAME\",\"password\":\"$TRACKING_PASSWORD\"}")
+              
+              ACCESS_TOKEN=$(echo "$AUTH_RESP" | jq -r '.access_token // empty')
+              if [ -z "$ACCESS_TOKEN" ]; then
+                echo "Failed to get access token"
+                exit 1
+              fi
+              
+              TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+              
+              EVENT_PAYLOAD=$(jq -n \
+                --arg inst_id "$INSTALLATION_ID" \
+                --arg ts "$TIMESTAMP" \
+                '{
+                  "installation_id": $inst_id,
+                  "event_name": "helm_uninstall",
+                  "event_source": "helm",
+                  "timestamp": $ts,
+                  "properties": {}
+                }')
+              
+              echo "Sending helm_uninstall event..."
+              TRACK_RESP=$(curl -sS -w "\n%{http_code}" -X POST \
+                "$TRACKING_ENDPOINT/track" \
+                -H "Content-Type: application/json" \
+                -H "accept: application/json" \
+                -H "Authorization: Bearer $ACCESS_TOKEN" \
+                -d "$EVENT_PAYLOAD")
+              
+              HTTP_CODE=$(echo "$TRACK_RESP" | tail -n1)
+              BODY=$(echo "$TRACK_RESP" | sed '$d')
+              
+              if [ "$HTTP_CODE" != "200" ]; then
+                echo "Failed to send tracking event: HTTP $HTTP_CODE"
+                echo "$BODY"
+                exit 1
+              fi
+              
+              echo "Tracking event sent successfully"
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+{{- end }}
+
