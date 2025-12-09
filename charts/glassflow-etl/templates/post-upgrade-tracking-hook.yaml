@@ -1,4 +1,4 @@
-{{- if .Values.global.tracking.enabled }}
+{{- if .Values.global.usageStats.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -11,6 +11,7 @@ metadata:
     "helm.sh/hook": post-upgrade
     "helm.sh/hook-weight": "10"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-timeout": "120"  # 2 minutes timeout
 spec:
   backoffLimit: 2
   ttlSecondsAfterFinished: 300
@@ -72,7 +73,7 @@ spec:
               OPERATOR_IMAGE_TAG="{{ index .Values "glassflow-operator" "controllerManager" "manager" "image" "tag" }}"
               UI_IMAGE_TAG="{{ .Values.ui.image.tag }}"
               
-              TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+              TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
               
               EVENT_PAYLOAD=$(jq -n \
                 --arg inst_id "$INSTALLATION_ID" \

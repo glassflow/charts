@@ -1,4 +1,4 @@
-{{- if .Values.global.tracking.enabled }}
+{{- if .Values.global.usageStats.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -11,6 +11,7 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-timeout": "120"  # 2 minutes timeout
 spec:
   backoffLimit: 2
   ttlSecondsAfterFinished: 300
@@ -34,9 +35,9 @@ spec:
               apk add --no-cache jq uuidgen >/dev/null 2>&1
               
               INSTALLATION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-              TRACKING_ENDPOINT="{{ .Values.global.tracking.endpoint }}"
-              TRACKING_USERNAME="{{ .Values.global.tracking.username }}"
-              TRACKING_PASSWORD="{{ .Values.global.tracking.password }}"
+              TRACKING_ENDPOINT="{{ .Values.global.usageStats.endpoint }}"
+              TRACKING_USERNAME="{{ .Values.global.usageStats.username }}"
+              TRACKING_PASSWORD="{{ .Values.global.usageStats.password }}"
               
               if [ -z "$TRACKING_USERNAME" ] || [ -z "$TRACKING_PASSWORD" ]; then
                 echo "Tracking credentials not provided, skipping tracking"
@@ -63,6 +64,9 @@ spec:
               fi
               
               echo "Detecting cluster info..."
+              {{- if .Values.global.usageStats.cluster_provider }}
+              CLUSTER_PROVIDER="{{ .Values.global.usageStats.cluster_provider }}"
+              {{- else }}
               CLUSTER_PROVIDER="unknown"
               if curl -sS --max-time 2 -f -H "Metadata-Flavor: Google" http://169.254.169.254/computeMetadata/v1/instance/zone >/dev/null 2>&1; then
                 CLUSTER_PROVIDER="GCP"
@@ -71,6 +75,7 @@ spec:
               elif curl -sS --max-time 2 -f -H "Metadata: true" http://169.254.169.254/metadata/instance?api-version=2021-02-01 >/dev/null 2>&1; then
                 CLUSTER_PROVIDER="Azure"
               fi
+              {{- end }}
               
               K8S_VERSION=$(curl -sS --cacert "$CA_CERT" -H "Authorization: Bearer $TOKEN" \
                 "$KUBE_API/version" | jq -r '.gitVersion // "unknown"')
@@ -94,7 +99,7 @@ spec:
               OPERATOR_CPU_LIM="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "limits" "cpu" }}"
               OPERATOR_MEM_LIM="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "limits" "memory" }}"
               
-              TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+              TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
               
               EVENT_PAYLOAD=$(jq -n \
                 --arg inst_id "$INSTALLATION_ID" \
@@ -178,16 +183,48 @@ spec:
                   "tracking_password": $password
                 }')
               
-              curl -sS --cacert "$CA_CERT" -X PATCH \
+              # Try to get existing secret first to preserve metadata
+              EXISTING_SECRET=$(curl -sS --cacert "$CA_CERT" \
                 -H "Authorization: Bearer $TOKEN" \
-                -H "Content-Type: application/merge-patch+json" \
-                -d "$(echo "$SECRET_DATA" | jq '{data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
-                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" || \
-              curl -sS --cacert "$CA_CERT" -X POST \
-                -H "Authorization: Bearer $TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "$(echo "$SECRET_DATA" | jq '{kind: "Secret", apiVersion: "v1", metadata: {name: "'"$SECRET_NAME"'", namespace: "'"$NAMESPACE"'"}, type: "Opaque", data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
-                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets"
+                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
+              
+              if echo "$EXISTING_SECRET" | jq -e '.kind == "Secret"' >/dev/null 2>&1; then
+                # Secret exists, use PATCH to update it
+                echo "Updating existing tracking secret..."
+                PATCH_RESP=$(curl -sS -w "\n%{http_code}" --cacert "$CA_CERT" -X PATCH \
+                  -H "Authorization: Bearer $TOKEN" \
+                  -H "Content-Type: application/merge-patch+json" \
+                  -d "$(echo "$SECRET_DATA" | jq '{data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
+                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME")
+                
+                PATCH_HTTP_CODE=$(echo "$PATCH_RESP" | tail -n1)
+                PATCH_BODY=$(echo "$PATCH_RESP" | sed '$d')
+                
+                if [ "$PATCH_HTTP_CODE" != "200" ] && [ "$PATCH_HTTP_CODE" != "201" ]; then
+                  echo "ERROR: Failed to update tracking secret: HTTP $PATCH_HTTP_CODE"
+                  echo "$PATCH_BODY"
+                  exit 1
+                fi
+                echo "Tracking secret updated successfully"
+              else
+                # Secret doesn't exist, create it with POST
+                echo "Creating new tracking secret..."
+                POST_RESP=$(curl -sS -w "\n%{http_code}" --cacert "$CA_CERT" -X POST \
+                  -H "Authorization: Bearer $TOKEN" \
+                  -H "Content-Type: application/json" \
+                  -d "$(echo "$SECRET_DATA" | jq '{kind: "Secret", apiVersion: "v1", metadata: {name: "'"$SECRET_NAME"'", namespace: "'"$NAMESPACE"'"}, type: "Opaque", data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
+                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets")
+                
+                POST_HTTP_CODE=$(echo "$POST_RESP" | tail -n1)
+                POST_BODY=$(echo "$POST_RESP" | sed '$d')
+                
+                if [ "$POST_HTTP_CODE" != "200" ] && [ "$POST_HTTP_CODE" != "201" ]; then
+                  echo "ERROR: Failed to create tracking secret: HTTP $POST_HTTP_CODE"
+                  echo "$POST_BODY"
+                  exit 1
+                fi
+                echo "Tracking secret created successfully"
+              fi
               
               echo "Tracking setup completed"
           env:
