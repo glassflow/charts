@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-glassflow-notifier
+  name: {{ .Release.Name }}-notifier
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "glassflow-etl.labels" . | nindent 4 }}
