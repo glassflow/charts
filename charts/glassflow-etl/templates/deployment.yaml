@@ -133,8 +133,49 @@ spec:
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
       {{- end }}
-      {{- if or .Values.postgresql.enabled true }}
+      {{- if or .Values.postgresql.enabled (or .Values.global.usageStats.enabled true) }}
       initContainers:
+        {{- if .Values.global.usageStats.enabled }}
+        - name: wait-for-usage-stats-secret
+          image: "alpine/curl:latest"
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              apk add --no-cache jq >/dev/null 2>&1
+              
+              SECRET_NAME="{{ .Release.Name }}-usage-stats-config"
+              NAMESPACE="{{ .Release.Namespace }}"
+              KUBE_API="https://kubernetes.default.svc"
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              
+              echo "Waiting for usage stats secret to be ready with installation_id..."
+              MAX_WAIT=300  # 5 minutes
+              ELAPSED=0
+              INTERVAL=2
+              
+              while [ $ELAPSED -lt $MAX_WAIT ]; do
+                SECRET_JSON=$(curl -sS --cacert "$CA_CERT" \
+                  -H "Authorization: Bearer $TOKEN" \
+                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
+                
+                INSTALLATION_ID=$(echo "$SECRET_JSON" | jq -r '.data.installation_id // empty' | base64 -d 2>/dev/null || echo "")
+                
+                if [ -n "$INSTALLATION_ID" ] && [ "$INSTALLATION_ID" != "null" ] && [ "$INSTALLATION_ID" != "" ]; then
+                  echo "Usage stats secret is ready with installation_id: ${INSTALLATION_ID:0:8}..."
+                  exit 0
+                fi
+                
+                echo "Waiting for installation_id in secret... (${ELAPSED}s/${MAX_WAIT}s)"
+                sleep $INTERVAL
+                ELAPSED=$((ELAPSED + INTERVAL))
+              done
+              
+              echo "ERROR: Timeout waiting for usage stats secret installation_id after ${MAX_WAIT}s"
+              exit 1
+        {{- end }}
         {{- if .Values.postgresql.enabled }}
         - name: wait-for-postgres
           image: "busybox:1.35"
@@ -316,6 +357,31 @@ spec:
             {{- else }}
             - name: GLASSFLOW_DATABASE_URL
               value: {{ .Values.global.postgres_connection_url | quote }}
+            {{- end }}
+            {{- if .Values.global.usageStats.enabled }}
+            - name: GLASSFLOW_USAGE_STATS_ENABLED
+              value: "true"
+            - name: GLASSFLOW_USAGE_STATS_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-usage-stats-config
+                  key: usage_stats_endpoint
+            - name: GLASSFLOW_USAGE_STATS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-usage-stats-config
+                  key: usage_stats_username
+            - name: GLASSFLOW_USAGE_STATS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-usage-stats-config
+                  key: usage_stats_password
+            - name: GLASSFLOW_USAGE_STATS_INSTALLATION_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-usage-stats-config
+                  key: installation_id
+                  optional: true
             {{- end }}
             {{- if .Values.api.env }}
             {{- range .Values.api.env }}
