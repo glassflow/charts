@@ -2,11 +2,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "glassflow-etl.fullname" . }}-tracking-pre-install-{{ .Release.Revision }}
+  name: {{ include "glassflow-etl.fullname" . }}-usage-stats-pre-install-{{ .Release.Revision }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "glassflow-etl.labels" . | nindent 4 }}
-    app.kubernetes.io/component: tracking
+    app.kubernetes.io/component: usage-stats
   annotations:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-5"
@@ -19,12 +19,12 @@ spec:
     metadata:
       labels:
         {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: tracking
+        app.kubernetes.io/component: usage-stats
     spec:
       restartPolicy: Never
       serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
       containers:
-        - name: tracking-hook
+        - name: usage-stats-hook
           image: alpine/curl:latest
           imagePullPolicy: IfNotPresent
           command:
@@ -35,12 +35,12 @@ spec:
               apk add --no-cache jq uuidgen >/dev/null 2>&1
               
               INSTALLATION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-              TRACKING_ENDPOINT="{{ .Values.global.usageStats.endpoint }}"
-              TRACKING_USERNAME="{{ .Values.global.usageStats.username }}"
-              TRACKING_PASSWORD="{{ .Values.global.usageStats.password }}"
+              USAGE_STATS_ENDPOINT="{{ .Values.global.usageStats.endpoint }}"
+              USAGE_STATS_USERNAME="{{ .Values.global.usageStats.username }}"
+              USAGE_STATS_PASSWORD="{{ .Values.global.usageStats.password }}"
               
-              if [ -z "$TRACKING_USERNAME" ] || [ -z "$TRACKING_PASSWORD" ]; then
-                echo "Tracking credentials not provided, skipping tracking"
+              if [ -z "$USAGE_STATS_USERNAME" ] || [ -z "$USAGE_STATS_PASSWORD" ]; then
+                echo "Usage stats credentials not provided, skipping usage stats"
                 exit 0
               fi
               
@@ -48,14 +48,14 @@ spec:
               TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
               CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
               NAMESPACE="{{ .Release.Namespace }}"
-              SECRET_NAME="{{ .Release.Name }}-tracking-config"
+              SECRET_NAME="{{ .Release.Name }}-usage-stats-config"
               
               echo "Getting auth token..."
               AUTH_RESP=$(curl -sS -X POST \
-                "$TRACKING_ENDPOINT/auth/login" \
+                "$USAGE_STATS_ENDPOINT/auth/login" \
                 -H "Content-Type: application/json" \
                 -H "accept: application/json" \
-                -d "{\"username\":\"$TRACKING_USERNAME\",\"password\":\"$TRACKING_PASSWORD\"}")
+                -d "{\"username\":\"$USAGE_STATS_USERNAME\",\"password\":\"$USAGE_STATS_PASSWORD\"}")
               
               ACCESS_TOKEN=$(echo "$AUTH_RESP" | jq -r '.access_token // empty')
               if [ -z "$ACCESS_TOKEN" ]; then
@@ -154,33 +154,33 @@ spec:
                 }')
               
               echo "Sending helm_install event..."
-              TRACK_RESP=$(curl -sS -w "\n%{http_code}" -X POST \
-                "$TRACKING_ENDPOINT/track" \
+              STATS_RESP=$(curl -sS -w "\n%{http_code}" -X POST \
+                "$USAGE_STATS_ENDPOINT/track" \
                 -H "Content-Type: application/json" \
                 -H "accept: application/json" \
                 -H "Authorization: Bearer $ACCESS_TOKEN" \
                 -d "$EVENT_PAYLOAD")
               
-              HTTP_CODE=$(echo "$TRACK_RESP" | tail -n1)
-              BODY=$(echo "$TRACK_RESP" | sed '$d')
+              HTTP_CODE=$(echo "$STATS_RESP" | tail -n1)
+              BODY=$(echo "$STATS_RESP" | sed '$d')
               
               if [ "$HTTP_CODE" != "200" ]; then
-                echo "Failed to send tracking event: HTTP $HTTP_CODE"
+                echo "Failed to send usage stats event: HTTP $HTTP_CODE"
                 echo "$BODY"
                 exit 1
               fi
               
-              echo "Creating tracking secret..."
+              echo "Creating usage stats secret..."
               SECRET_DATA=$(jq -n \
                 --arg inst_id "$INSTALLATION_ID" \
-                --arg endpoint "$TRACKING_ENDPOINT" \
-                --arg username "$TRACKING_USERNAME" \
-                --arg password "$TRACKING_PASSWORD" \
+                --arg endpoint "$USAGE_STATS_ENDPOINT" \
+                --arg username "$USAGE_STATS_USERNAME" \
+                --arg password "$USAGE_STATS_PASSWORD" \
                 '{
                   "installation_id": $inst_id,
-                  "tracking_endpoint": $endpoint,
-                  "tracking_username": $username,
-                  "tracking_password": $password
+                  "usage_stats_endpoint": $endpoint,
+                  "usage_stats_username": $username,
+                  "usage_stats_password": $password
                 }')
               
               # Try to get existing secret first to preserve metadata
@@ -190,7 +190,7 @@ spec:
               
               if echo "$EXISTING_SECRET" | jq -e '.kind == "Secret"' >/dev/null 2>&1; then
                 # Secret exists, use PATCH to update it
-                echo "Updating existing tracking secret..."
+                echo "Updating existing usage stats secret..."
                 PATCH_RESP=$(curl -sS -w "\n%{http_code}" --cacert "$CA_CERT" -X PATCH \
                   -H "Authorization: Bearer $TOKEN" \
                   -H "Content-Type: application/merge-patch+json" \
@@ -201,14 +201,14 @@ spec:
                 PATCH_BODY=$(echo "$PATCH_RESP" | sed '$d')
                 
                 if [ "$PATCH_HTTP_CODE" != "200" ] && [ "$PATCH_HTTP_CODE" != "201" ]; then
-                  echo "ERROR: Failed to update tracking secret: HTTP $PATCH_HTTP_CODE"
+                  echo "ERROR: Failed to update usage stats secret: HTTP $PATCH_HTTP_CODE"
                   echo "$PATCH_BODY"
                   exit 1
                 fi
-                echo "Tracking secret updated successfully"
+                echo "Usage stats secret updated successfully"
               else
                 # Secret doesn't exist, create it with POST
-                echo "Creating new tracking secret..."
+                echo "Creating new usage stats secret..."
                 POST_RESP=$(curl -sS -w "\n%{http_code}" --cacert "$CA_CERT" -X POST \
                   -H "Authorization: Bearer $TOKEN" \
                   -H "Content-Type: application/json" \
@@ -219,14 +219,14 @@ spec:
                 POST_BODY=$(echo "$POST_RESP" | sed '$d')
                 
                 if [ "$POST_HTTP_CODE" != "200" ] && [ "$POST_HTTP_CODE" != "201" ]; then
-                  echo "ERROR: Failed to create tracking secret: HTTP $POST_HTTP_CODE"
+                  echo "ERROR: Failed to create usage stats secret: HTTP $POST_HTTP_CODE"
                   echo "$POST_BODY"
                   exit 1
                 fi
-                echo "Tracking secret created successfully"
+                echo "Usage stats secret created successfully"
               fi
               
-              echo "Tracking setup completed"
+              echo "Usage stats setup completed"
           env:
             - name: POD_NAMESPACE
               valueFrom:
