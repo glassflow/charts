@@ -36,8 +36,6 @@ global:
 
   usageStats:
     enabled: true
-  tracking:
-    enabled: true
     endpoint: "https://tracking.glassflow.dev/api/v1"
     username: ""
     password: ""
