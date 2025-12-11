@@ -133,7 +133,6 @@ spec:
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
       {{- end }}
-      {{- if or .Values.postgresql.enabled true }}
       initContainers:
         {{- if .Values.postgresql.enabled }}
         - name: wait-for-postgres
@@ -175,125 +174,226 @@ spec:
                 sleep 2
               done
               echo "NATS is ready!"
-      {{- end }}
-      {{- if or .Values.postgresql.enabled true }}
-        - name: wait-for-migration
-          image: "alpine/curl:latest"
+        {{- if or .Values.postgresql.enabled .Values.global.postgres_connection_url }}
+        - name: run-migration
+          image: "alpine:3.20"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
           command:
-            - sh
+            - /bin/sh
             - -c
             - |
-              # Install jq for JSON parsing
-              apk add --no-cache jq >/dev/null 2>&1
-
-              JOB_NAME="{{ include "glassflow-etl.fullname" . }}-migration-{{ .Release.Revision }}"
-              NAMESPACE="{{ .Release.Namespace }}"
-              KUBE_API="https://kubernetes.default.svc"
-              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-              CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-
-              echo "=== Waiting for migration job to complete ==="
-              echo "Job name: $JOB_NAME"
-              echo "Namespace: $NAMESPACE"
-
-              # Function to check if job exists via Kubernetes API
-              check_job_exists() {
-                HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --cacert "$CA_CERT" \
-                  -H "Authorization: Bearer $TOKEN" \
-                  "$KUBE_API/apis/batch/v1/namespaces/$NAMESPACE/jobs/$JOB_NAME" 2>/dev/null)
-                [ "$HTTP_CODE" = "200" ]
-              }
-
-              # Function to get full job object
-              get_job_json() {
-                curl -sS --cacert "$CA_CERT" \
-                  -H "Authorization: Bearer $TOKEN" \
-                  "$KUBE_API/apis/batch/v1/namespaces/$NAMESPACE/jobs/$JOB_NAME" 2>/dev/null
-              }
-
-              # Step 1: Wait for job to be created (Helm hook might create it after pod starts)
-              echo "Step 1: Waiting for migration job to exist..."
-              MAX_WAIT_FOR_JOB=300  # 5 minutes
-              ELAPSED=0
-              while ! check_job_exists; do
-                if [ $ELAPSED -ge $MAX_WAIT_FOR_JOB ]; then
-                  echo "ERROR: Migration job '$JOB_NAME' not found after ${MAX_WAIT_FOR_JOB}s"
-                  echo "This might mean the Helm hook hasn't created it yet, or there's a naming mismatch."
-                  exit 1
-                fi
-                echo "  Job not found yet, waiting... (${ELAPSED}s/${MAX_WAIT_FOR_JOB}s)"
-                sleep 5
-                ELAPSED=$((ELAPSED + 5))
-              done
-
-              echo "✓ Migration job found: $JOB_NAME"
-
-              # Step 2: Wait for job to complete
-              echo "Step 2: Waiting for migration job to complete..."
-              echo "  This may take several minutes depending on migration complexity..."
-
-              MAX_WAIT=1800  # 30 minutes
-              ELAPSED=0
-              while [ $ELAPSED -lt $MAX_WAIT ]; do
-                # Check if job still exists (should exist unless deleted manually or TTL expired)
-                if ! check_job_exists; then
-                  echo "⚠ Migration job no longer exists"
-                  echo "  This could mean the job was deleted manually or TTL expired (1 hour)."
-                  echo "  If migrations completed, proceeding with API startup..."
-                  echo "  WARNING: This may indicate the job failed or was interrupted."
-                  exit 0
-                fi
-
-                # Get job JSON
-                JOB_JSON=$(get_job_json)
-                if [ -z "$JOB_JSON" ] || ! echo "$JOB_JSON" | jq . >/dev/null 2>&1; then
-                  echo "  Waiting for job status to be available..."
-                  sleep 5
-                  ELAPSED=$((ELAPSED + 5))
-                  continue
-                fi
-
-                # Extract status fields safely
-                SUCCEEDED=$(echo "$JOB_JSON" | jq -r '.status.succeeded // 0' 2>/dev/null || echo "0")
-                FAILED=$(echo "$JOB_JSON" | jq -r '.status.failed // 0' 2>/dev/null || echo "0")
-                COMPLETION_TIME=$(echo "$JOB_JSON" | jq -r '.status.completionTime // empty' 2>/dev/null || echo "")
-
-                # Check conditions safely
-                COMPLETE_COND=$(echo "$JOB_JSON" | jq -r '.status.conditions[]? | select(.type=="Complete") | .status // empty' 2>/dev/null || echo "")
-                FAILED_COND=$(echo "$JOB_JSON" | jq -r '.status.conditions[]? | select(.type=="Failed") | .status // empty' 2>/dev/null || echo "")
-
-                # Success conditions
-                if [ "$SUCCEEDED" = "1" ] || [ -n "$COMPLETION_TIME" ] || [ "$COMPLETE_COND" = "True" ]; then
-                  echo "✓ Migration job completed successfully!"
-                  exit 0
-                fi
-
-                # Failure conditions
-                if [ "$FAILED_COND" = "True" ] || ([ "$FAILED" != "0" ] && [ -n "$FAILED" ] && [ "$FAILED" != "null" ]); then
-                  echo "✗ ERROR: Migration job failed!"
-                  echo "Job status:"
-                  echo "$JOB_JSON" | jq '.status' 2>/dev/null || echo "$JOB_JSON"
-                  exit 1
-                fi
-
-                # Still running
-                if [ $((ELAPSED % 30)) -eq 0 ]; then
-                  echo "  Job still running... (${ELAPSED}s/${MAX_WAIT}s)"
-                fi
-
-                sleep 5
-                ELAPSED=$((ELAPSED + 5))
-              done
-
-              echo "✗ ERROR: Migration job did not complete within timeout (30 minutes)"
-              echo "Final job status:"
-              JOB_JSON=$(get_job_json)
-              if [ -n "$JOB_JSON" ] && echo "$JOB_JSON" | jq . >/dev/null 2>&1; then
-                echo "$JOB_JSON" | jq '.status' 2>/dev/null || echo "$JOB_JSON"
-              else
-                echo "Unable to retrieve job status"
+              set -e
+              echo "Starting database migration..."
+              
+              # Install required tools
+              apk add --no-cache curl git postgresql-client tar
+              
+              # Install golang-migrate
+              MIGRATE_VERSION="v4.19.1"
+              
+              # Detect architecture
+              DETECTED_ARCH="$(uname -m)"
+              echo "Detected architecture: ${DETECTED_ARCH}"
+              
+              ARCH="amd64"
+              if [ "${DETECTED_ARCH}" = "aarch64" ] || [ "${DETECTED_ARCH}" = "arm64" ]; then
+                ARCH="arm64"
               fi
-              exit 1
+              
+              # golang-migrate uses "linux" for all Linux distributions (including Alpine)
+              OS_PLATFORM="linux"
+              TEMP_FILE="/tmp/migrate.tar.gz"
+              
+              # Try to download for detected architecture first, fallback to amd64 if it fails
+              MIGRATE_URL="https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.${OS_PLATFORM}-${ARCH}.tar.gz"
+              echo "Installing golang-migrate ${MIGRATE_VERSION} for ${OS_PLATFORM}-${ARCH}..."
+              echo "Downloading from: ${MIGRATE_URL}"
+              
+              # Download to temporary file first
+              if ! curl -L -f -o "${TEMP_FILE}" "${MIGRATE_URL}"; then
+                if [ "${ARCH}" = "arm64" ]; then
+                  echo "WARNING: arm64 build not available, trying amd64 instead..."
+                  ARCH="amd64"
+                  MIGRATE_URL="https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.${OS_PLATFORM}-${ARCH}.tar.gz"
+                  echo "Downloading from: ${MIGRATE_URL}"
+                  if ! curl -L -f -o "${TEMP_FILE}" "${MIGRATE_URL}"; then
+                    echo "ERROR: Failed to download golang-migrate for both arm64 and amd64"
+                    exit 1
+                  fi
+                else
+                  echo "ERROR: Failed to download golang-migrate from ${MIGRATE_URL}"
+                  exit 1
+                fi
+              fi
+              
+              # Verify file was downloaded and is not empty
+              if [ ! -s "${TEMP_FILE}" ]; then
+                echo "ERROR: Downloaded file is empty"
+                exit 1
+              fi
+              
+              # Extract the binary
+              tar -xzf "${TEMP_FILE}" -C /tmp || {
+                echo "ERROR: Failed to extract golang-migrate"
+                exit 1
+              }
+              
+              # Verify migrate binary exists
+              if [ ! -f /tmp/migrate ]; then
+                echo "ERROR: migrate binary not found after extraction"
+                exit 1
+              fi
+              
+              chmod +x /tmp/migrate
+              mv /tmp/migrate /usr/local/bin/migrate
+              rm -f "${TEMP_FILE}"
+              
+              # Verify installation
+              if ! command -v migrate > /dev/null 2>&1; then
+                echo "ERROR: migrate command not found after installation"
+                exit 1
+              fi
+              
+              echo "golang-migrate ${MIGRATE_VERSION} installed successfully"
+              
+              # Clone repository
+              REPO_URL="https://github.com/glassflow/clickhouse-etl.git"
+              REPO_BRANCH=sudopower/etl-422-introduce-postgres-to-store-pipeline-instead-of-using-nats
+              WORK_DIR="/tmp/migrations"
+              
+              echo "Cloning repository: ${REPO_URL} (branch: ${REPO_BRANCH})"
+              rm -rf "${WORK_DIR}"
+              git clone --depth 1 --branch "${REPO_BRANCH}" "${REPO_URL}" "${WORK_DIR}" || {
+                echo "Failed to clone branch ${REPO_BRANCH}, trying default branch..."
+                git clone --depth 1 "${REPO_URL}" "${WORK_DIR}"
+              }
+              
+              # Path structure: clickhouse-etl/glassflow-api/migrations/run-migrations.sh
+              MIGRATIONS_DIR="${WORK_DIR}/clickhouse-etl/glassflow-api/migrations"
+              
+              # Verify migrations directory exists
+              if [ ! -d "${MIGRATIONS_DIR}" ]; then
+                echo "ERROR: Migrations directory not found at ${MIGRATIONS_DIR}"
+                echo "Checking alternative path..."
+                if [ -d "${WORK_DIR}/glassflow-api/migrations" ]; then
+                  MIGRATIONS_DIR="${WORK_DIR}/glassflow-api/migrations"
+                  echo "Using alternative path: ${MIGRATIONS_DIR}"
+                else
+                  echo "Available directories:"
+                  find "${WORK_DIR}" -type d -maxdepth 3 | head -20
+                  exit 1
+                fi
+              fi
+              
+              cd "${MIGRATIONS_DIR}"
+              echo "Current directory: $(pwd)"
+              echo "Files in directory:"
+              ls -la
+              
+              # Set up environment variables for migration script
+              {{- if .Values.postgresql.enabled }}
+              export POSTGRES_HOST="${POSTGRES_HOST}"
+              export POSTGRES_PORT="${POSTGRES_PORT}"
+              export POSTGRES_USER="${POSTGRES_USER}"
+              export POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
+              export POSTGRES_DB="{{ .Values.postgresql.auth.database | default "glassflow" }}"
+              {{- else if .Values.global.postgres_connection_url }}
+              # Parse connection URL: postgresql://user:password@host:port/database
+              if [ -n "${POSTGRES_CONNECTION_URL}" ]; then
+                # Remove protocol prefix
+                URL_NO_PROTO="${POSTGRES_CONNECTION_URL#postgresql://}"
+                URL_NO_PROTO="${URL_NO_PROTO#postgres://}"
+                
+                # Extract user:password@host:port/database
+                # Split by @ to get credentials and host:port/database
+                CREDENTIALS="${URL_NO_PROTO%%@*}"
+                HOST_PORT_DB="${URL_NO_PROTO#*@}"
+                
+                # Extract user and password
+                POSTGRES_USER="${CREDENTIALS%%:*}"
+                POSTGRES_PASSWORD="${CREDENTIALS#*:}"
+                
+                # Extract host, port, and database
+                HOST_PORT="${HOST_PORT_DB%%/*}"
+                POSTGRES_DB="${HOST_PORT_DB#*/}"
+                # Remove query parameters if present
+                POSTGRES_DB="${POSTGRES_DB%%\?*}"
+                
+                # Extract host and port
+                if echo "${HOST_PORT}" | grep -q ":"; then
+                  POSTGRES_HOST="${HOST_PORT%%:*}"
+                  POSTGRES_PORT="${HOST_PORT#*:}"
+                else
+                  POSTGRES_HOST="${HOST_PORT}"
+                  POSTGRES_PORT="5432"
+                fi
+                
+                export POSTGRES_HOST
+                export POSTGRES_PORT
+                export POSTGRES_USER
+                export POSTGRES_PASSWORD
+                export POSTGRES_DB
+              else
+                echo "ERROR: POSTGRES_CONNECTION_URL is required when using external PostgreSQL"
+                exit 1
+              fi
+              {{- end }}
+              export POSTGRES_ADMIN_DB="postgres"
+              
+              # Verify migration script exists
+              if [ ! -f "run-migrations.sh" ]; then
+                echo "ERROR: Migration script not found at $(pwd)/run-migrations.sh"
+                echo "Searching for run-migrations.sh in repository..."
+                find "${WORK_DIR}" -name "run-migrations.sh" -type f 2>/dev/null
+                exit 1
+              fi
+              
+              # Make script executable
+              chmod +x run-migrations.sh
+              
+              # Verify file is executable and readable
+              if [ ! -x "run-migrations.sh" ]; then
+                echo "ERROR: run-migrations.sh is not executable"
+                exit 1
+              fi
+              
+              # Run migration script using explicit shell (Alpine doesn't have bash)
+              echo "Running migration script with database: ${POSTGRES_DB}..."
+              # Use sh explicitly since Alpine doesn't have bash
+              sh run-migrations.sh
+              
+              echo "Migration completed successfully!"
+          env:
+            {{- if .Values.postgresql.enabled }}
+            - name: POSTGRES_HOST
+              value: "{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local"
+            - name: POSTGRES_PORT
+              value: "{{ .Values.postgresql.service.port | default 5432 | toString }}"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: glassflow-postgresql
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: glassflow-postgresql
+                  key: password
+            {{- else if .Values.global.postgres_connection_url }}
+            - name: POSTGRES_CONNECTION_URL
+              value: {{ .Values.global.postgres_connection_url | quote }}
+            {{- end }}
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
       {{- end }}
       containers:
         - name: api
