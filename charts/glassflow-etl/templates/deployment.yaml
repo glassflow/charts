@@ -261,7 +261,7 @@ spec:
 
               # Clone repository
               REPO_URL="https://github.com/glassflow/clickhouse-etl.git"
-              REPO_BRANCH=sudopower/etl-422-introduce-postgres-to-store-pipeline-instead-of-using-nats
+              REPO_BRANCH=main
               WORK_DIR="/tmp/migrations"
 
               echo "Cloning repository: ${REPO_URL} (branch: ${REPO_BRANCH})"
