@@ -33,3 +33,23 @@ spec:
   selector:
     {{- include "glassflow-etl.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: api
+---
+{{- if .Values.notificationService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-notifier
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.notificationService.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.notificationService.service.port | default 8080 }}
+      targetPort: {{ .Values.notificationService.service.targetPort | default 8080 }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "glassflow-etl.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: glassflow-notifier
+{{- end }}
