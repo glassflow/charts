@@ -159,7 +159,7 @@ glassflow-operator:
     manager:
       image:
         repository: glassflow-etl-k8s-operator
-        tag: v1.4.2
+        tag: v1.4.3
         pullPolicy: IfNotPresent
       resources:
         limits:
@@ -176,6 +176,7 @@ glassflow-operator:
       image:
         repository: glassflow-etl-ingestor
         tag: v2.6.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -190,6 +191,7 @@ glassflow-operator:
       image:
         repository: glassflow-etl-join
         tag: v2.6.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -204,6 +206,7 @@ glassflow-operator:
       image:
         repository: glassflow-etl-sink
         tag: v2.6.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -218,6 +221,7 @@ glassflow-operator:
       image:
         repository: glassflow-etl-dedup
         tag: v2.6.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
