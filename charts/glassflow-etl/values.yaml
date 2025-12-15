@@ -52,7 +52,7 @@ api:
   logLevel: "info"
   image:
     repository: glassflow-etl-be
-    tag: v2.5.1
+    tag: v2.6.0
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -86,7 +86,7 @@ ui:
   replicas: 1
   image:
     repository: glassflow-etl-fe
-    tag: v2.5.1
+    tag: v2.6.0
     pullPolicy: IfNotPresent
   logLevel: "info"
   resources:
@@ -162,7 +162,7 @@ glassflow-operator:
     manager:
       image:
         repository: glassflow-etl-k8s-operator
-        tag: v1.4.2
+        tag: v1.4.3
         pullPolicy: IfNotPresent
       resources:
         limits:
@@ -178,7 +178,8 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.5.1
+        tag: v2.6.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -192,7 +193,8 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.5.1
+        tag: v2.6.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -206,7 +208,8 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.5.1
+        tag: v2.6.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -220,7 +223,8 @@ glassflow-operator:
     dedup:
       image:
         repository: glassflow-etl-dedup
-        tag: v2.5.1
+        tag: v2.6.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
