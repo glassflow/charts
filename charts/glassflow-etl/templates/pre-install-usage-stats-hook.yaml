@@ -35,14 +35,9 @@ spec:
               apk add --no-cache jq uuidgen >/dev/null 2>&1
               
               INSTALLATION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-              USAGE_STATS_ENDPOINT="{{ .Values.global.usageStats.endpoint }}"
-              USAGE_STATS_USERNAME="{{ .Values.global.usageStats.username }}"
-              USAGE_STATS_PASSWORD="{{ .Values.global.usageStats.password }}"
-              
-              if [ -z "$USAGE_STATS_USERNAME" ] || [ -z "$USAGE_STATS_PASSWORD" ]; then
-                echo "Usage stats credentials not provided, skipping usage stats"
-                exit 0
-              fi
+              USAGE_STATS_ENDPOINT="https://tracking.glassflow.dev/api/v1"
+              USAGE_STATS_USERNAME="5PR3vzYGGlYttkBXRTYuzw=="
+              USAGE_STATS_PASSWORD="5tJcYQNR85KKyOwpeIFVdGqGIOgFwxmWEHu0t7WxBbo="
               
               KUBE_API="https://kubernetes.default.svc"
               TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
