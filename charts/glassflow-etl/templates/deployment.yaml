@@ -142,7 +142,6 @@ spec:
             - sh
             - -c
             - |
-              set -e
               apk add --no-cache jq >/dev/null 2>&1
 
               SECRET_NAME="{{ .Release.Name }}-usage-stats-config"
@@ -173,8 +172,9 @@ spec:
                 ELAPSED=$((ELAPSED + INTERVAL))
               done
 
-              echo "ERROR: Timeout waiting for usage stats secret installation_id after ${MAX_WAIT}s"
-              exit 1
+              echo "WARNING: Timeout waiting for usage stats secret installation_id after ${MAX_WAIT}s"
+              echo "Continuing without usage stats secret - usage stats will be disabled"
+              exit 0
         {{- end }}
         {{- if .Values.postgresql.enabled }}
         - name: wait-for-postgres
@@ -467,16 +467,19 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-usage-stats-config
                   key: usage_stats_endpoint
+                  optional: true
             - name: GLASSFLOW_USAGE_STATS_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ .Release.Name }}-usage-stats-config
                   key: usage_stats_username
+                  optional: true
             - name: GLASSFLOW_USAGE_STATS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Release.Name }}-usage-stats-config
                   key: usage_stats_password
+                  optional: true
             - name: GLASSFLOW_USAGE_STATS_INSTALLATION_ID
               valueFrom:
                 secretKeyRef:
@@ -490,6 +493,7 @@ spec:
               value: {{ .value | quote }}
             {{- end }}
             {{- end }}
+          {{- end }}
           {{- with .Values.api.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
