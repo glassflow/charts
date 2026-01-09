@@ -36,10 +36,16 @@ global:
 
   usageStats:
     enabled: true
-  # PostgreSQL connection URL
+
   # Only used when postgresql.enabled is false
-  # Format: postgresql://username:password@host:port/database
-  # postgres_connection_url: ""
+  postgres:
+    # PostgreSQL connection URL
+    # Format: postgresql://username:password@host:port/database
+    connection_url: ""
+    # Alternatively, source the connection URL from a Kubernetes secret
+    secret:
+      name: ""
+      key: "connection_url"
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
@@ -267,7 +273,7 @@ natsPrometheusExporter:
 # =============================================================================
 # PostgreSQL database configuration
 # When enabled, the postgresql dependency chart will be deployed
-# When disabled, use global.postgres_connection_url to connect to an external PostgreSQL instance
+# When disabled, use global.postgres.connection_url or global.postgres.secret.name to connect to an external PostgreSQL instance
 postgresql:
   # Enable or disable PostgreSQL deployment
   # Set to false if you want to use an external PostgreSQL instance

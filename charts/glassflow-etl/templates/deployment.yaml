@@ -174,7 +174,7 @@ spec:
                 sleep 2
               done
               echo "NATS is ready!"
-        {{- if or .Values.postgresql.enabled .Values.global.postgres_connection_url }}
+        {{- if or .Values.postgresql.enabled .Values.global.postgres.connection_url .Values.global.postgres.secret.name }}
         - name: run-migration
           image: "alpine:3.20"
           imagePullPolicy: IfNotPresent
@@ -300,7 +300,7 @@ spec:
               export POSTGRES_USER="${POSTGRES_USER}"
               export POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
               export POSTGRES_DB="{{ .Values.postgresql.auth.database | default "glassflow" }}"
-              {{- else if .Values.global.postgres_connection_url }}
+              {{- else }}
               # Parse connection URL: postgresql://user:password@host:port/database
               if [ -n "${POSTGRES_CONNECTION_URL}" ]; then
                 # Remove protocol prefix
@@ -382,9 +382,15 @@ spec:
                 secretKeyRef:
                   name: glassflow-postgresql
                   key: password
-            {{- else if .Values.global.postgres_connection_url }}
+            {{- else if .Values.global.postgres.connection_url }}
             - name: POSTGRES_CONNECTION_URL
-              value: {{ .Values.global.postgres_connection_url | quote }}
+              value: {{ .Values.global.postgres.connection_url | quote }}
+            {{- else if .Values.global.postgres.secret.name }}
+            - name: POSTGRES_CONNECTION_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.postgres.secret.name }}
+                  key: {{ .Values.global.postgres.secret.key }}
             {{- end }}
           resources:
             requests:
@@ -413,9 +419,15 @@ spec:
                 secretKeyRef:
                   name: glassflow-postgresql
                   key: connection-url
-            {{- else }}
+            {{- else if .Values.global.postgres.connection_url }}
             - name: GLASSFLOW_DATABASE_URL
-              value: {{ .Values.global.postgres_connection_url | quote }}
+              value: {{ .Values.global.postgres.connection_url | quote }}
+            {{- else if .Values.global.postgres.secret.name }}
+            - name: GLASSFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.postgres.secret.name }}
+                  key: {{ .Values.global.postgres.secret.key }}
             {{- end }}
             {{- if .Values.api.env }}
             {{- range .Values.api.env }}
