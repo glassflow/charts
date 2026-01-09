@@ -36,7 +36,7 @@ global:
 
   usageStats:
     enabled: true
-  
+
   # Only used when postgresql.enabled is false
   postgres:
     # PostgreSQL connection URL
