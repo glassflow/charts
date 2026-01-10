@@ -55,7 +55,7 @@ api:
   logLevel: "info"
   image:
     repository: glassflow-etl-be
-    tag: rc-PR-449
+    tag: v2.6.2
     pullPolicy: IfNotPresent
   resources:
     requests:
