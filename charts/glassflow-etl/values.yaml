@@ -55,7 +55,7 @@ api:
   logLevel: "info"
   image:
     repository: glassflow-etl-be
-    tag: v2.6.2
+    tag: rc-PR-449
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -80,6 +80,18 @@ api:
   #   - name: GLASSFLOW_LOG_LEVEL
   #     value: "DEBUG"
   env: []
+
+  # Encryption configuration for connection credentials
+  encryption:
+    # Enable credential encryption (encrypts Kafka and ClickHouse connection details)
+    enabled: true
+    # Use existing secret - Your own secret (recommended for production)
+    existingSecret:
+      name: ""  # e.g., "glassflow-encryption-key"
+      key: "encryption-key"  # Key name in secret
+    # Or let Helm generate a secret (for development/testing)
+    createSecret: true
+    secretName: ""  # Defaults to "{{ .Release.Name }}-encryption-key" if empty
 
 # =============================================================================
 # UI COMPONENT CONFIGURATION

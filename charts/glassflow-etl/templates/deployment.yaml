@@ -435,6 +435,14 @@ spec:
               value: {{ .value | quote }}
             {{- end }}
             {{- end }}
+          volumeMounts:
+            - name: logs
+              mountPath: /tmp/logs/glassflow
+            {{- if and .Values.api.encryption.enabled (or .Values.api.encryption.existingSecret.name .Values.api.encryption.createSecret) }}
+            - name: encryption-key
+              mountPath: /etc/glassflow/secrets
+              readOnly: true
+            {{- end }}
           {{- with .Values.api.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -444,11 +452,17 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
-          volumeMounts:
-            - name: logs
-              mountPath: /tmp/logs/glassflow
       serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
       securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
       volumes:
         - name: logs
           emptyDir: {}
+        {{- if and .Values.api.encryption.enabled (or .Values.api.encryption.existingSecret.name .Values.api.encryption.createSecret) }}
+        - name: encryption-key
+          secret:
+            secretName: {{ if .Values.api.encryption.existingSecret.name }}{{ .Values.api.encryption.existingSecret.name }}{{ else }}{{ .Values.api.encryption.secretName | default (printf "%s-encryption-key" .Release.Name) }}{{ end }}
+            defaultMode: 0444
+            items:
+              - key: {{ .Values.api.encryption.existingSecret.key | default "encryption-key" }}
+                path: encryption-key
+        {{- end }}
