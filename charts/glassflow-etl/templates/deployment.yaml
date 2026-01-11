@@ -352,7 +352,7 @@ spec:
                   name: glassflow-postgresql
                   key: password
             - name: POSTGRES_SSLMODE
-              value: "{{ .Values.postgresql.auth.sslmode | default "disable" | quote }}"}
+              value: {{ .Values.postgresql.auth.sslmode | default "disable" | quote }}
             {{- else if .Values.global.postgres.connection_url }}
             - name: POSTGRES_CONNECTION_URL
               value: {{ .Values.global.postgres.connection_url | quote }}
