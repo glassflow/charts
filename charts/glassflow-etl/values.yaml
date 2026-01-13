@@ -46,6 +46,18 @@ global:
     secret:
       name: ""
       key: "connection_url"
+
+  # Encryption configuration for connection credentials
+  encryption:
+    # Enable credential encryption (encrypts Kafka and ClickHouse connection details)
+    enabled: true
+    # Use existing secret - Your own secret (recommended for production)
+    existingSecret:
+      name: ""  # e.g., "glassflow-encryption-key"
+      key: "encryption-key"  # Key name in secret
+    # Or let Helm generate a secret (for development/testing)
+    createSecret: true
+    secretName: ""  # Defaults to "{{ .Release.Name }}-encryption-key" if empty
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
@@ -80,18 +92,6 @@ api:
   #   - name: GLASSFLOW_LOG_LEVEL
   #     value: "DEBUG"
   env: []
-
-  # Encryption configuration for connection credentials
-  encryption:
-    # Enable credential encryption (encrypts Kafka and ClickHouse connection details)
-    enabled: true
-    # Use existing secret - Your own secret (recommended for production)
-    existingSecret:
-      name: ""  # e.g., "glassflow-encryption-key"
-      key: "encryption-key"  # Key name in secret
-    # Or let Helm generate a secret (for development/testing)
-    createSecret: true
-    secretName: ""  # Defaults to "{{ .Release.Name }}-encryption-key" if empty
 
 # =============================================================================
 # UI COMPONENT CONFIGURATION
