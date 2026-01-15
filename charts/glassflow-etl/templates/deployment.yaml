@@ -341,42 +341,11 @@ spec:
               export POSTGRES_USER="${POSTGRES_USER}"
               export POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
               export POSTGRES_DB="{{ .Values.postgresql.auth.database | default "glassflow" }}"
+              export POSTGRES_SSLMODE="{{ .Values.postgresql.auth.sslmode | default "disable" }}"
               {{- else }}
               # Parse connection URL: postgresql://user:password@host:port/database
               if [ -n "${POSTGRES_CONNECTION_URL}" ]; then
-                # Remove protocol prefix
-                URL_NO_PROTO="${POSTGRES_CONNECTION_URL#postgresql://}"
-                URL_NO_PROTO="${URL_NO_PROTO#postgres://}"
-
-                # Extract user:password@host:port/database
-                # Split by @ to get credentials and host:port/database
-                CREDENTIALS="${URL_NO_PROTO%%@*}"
-                HOST_PORT_DB="${URL_NO_PROTO#*@}"
-
-                # Extract user and password
-                POSTGRES_USER="${CREDENTIALS%%:*}"
-                POSTGRES_PASSWORD="${CREDENTIALS#*:}"
-
-                # Extract host, port, and database
-                HOST_PORT="${HOST_PORT_DB%%/*}"
-                POSTGRES_DB="${HOST_PORT_DB#*/}"
-                # Remove query parameters if present
-                POSTGRES_DB="${POSTGRES_DB%%\?*}"
-
-                # Extract host and port
-                if echo "${HOST_PORT}" | grep -q ":"; then
-                  POSTGRES_HOST="${HOST_PORT%%:*}"
-                  POSTGRES_PORT="${HOST_PORT#*:}"
-                else
-                  POSTGRES_HOST="${HOST_PORT}"
-                  POSTGRES_PORT="5432"
-                fi
-
-                export POSTGRES_HOST
-                export POSTGRES_PORT
-                export POSTGRES_USER
-                export POSTGRES_PASSWORD
-                export POSTGRES_DB
+                export POSTGRES_CONNECTION_URL="${POSTGRES_CONNECTION_URL}"
               else
                 echo "ERROR: POSTGRES_CONNECTION_URL is required when using external PostgreSQL"
                 exit 1
@@ -423,6 +392,8 @@ spec:
                 secretKeyRef:
                   name: glassflow-postgresql
                   key: password
+            - name: POSTGRES_SSLMODE
+              value: {{ .Values.postgresql.auth.sslmode | default "disable" | quote }}
             {{- else if .Values.global.postgres.connection_url }}
             - name: POSTGRES_CONNECTION_URL
               value: {{ .Values.global.postgres.connection_url | quote }}
