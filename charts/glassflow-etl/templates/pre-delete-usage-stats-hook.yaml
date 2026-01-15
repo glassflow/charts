@@ -46,9 +46,9 @@ spec:
                 "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
               
               INSTALLATION_ID=$(echo "$SECRET_JSON" | jq -r '.data.installation_id // empty' | base64 -d)
-              USAGE_STATS_ENDPOINT=$(echo "$SECRET_JSON" | jq -r '.data.usage-stats_endpoint // empty' | base64 -d)
-              USAGE_STATS_USERNAME=$(echo "$SECRET_JSON" | jq -r '.data.usage-stats_username // empty' | base64 -d)
-              USAGE_STATS_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.data.usage-stats_password // empty' | base64 -d)
+              USAGE_STATS_ENDPOINT=$(echo "$SECRET_JSON" | jq -r '.data.usage_stats_endpoint // empty' | base64 -d)
+              USAGE_STATS_USERNAME=$(echo "$SECRET_JSON" | jq -r '.data.usage_stats_username // empty' | base64 -d)
+              USAGE_STATS_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.data.usage_stats_password // empty' | base64 -d)
               
               if [ -z "$INSTALLATION_ID" ] || [ -z "$USAGE_STATS_ENDPOINT" ] || [ -z "$USAGE_STATS_USERNAME" ] || [ -z "$USAGE_STATS_PASSWORD" ]; then
                 echo "UsageStat secret incomplete, skipping"
