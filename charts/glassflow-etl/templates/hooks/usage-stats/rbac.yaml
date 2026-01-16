@@ -49,4 +49,3 @@ subjects:
   name: {{ include "glassflow-etl.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
 {{- end }}
-

@@ -2,16 +2,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "glassflow-etl.fullname" . }}-usage-stats-post-install-{{ .Release.Revision }}
+  name: {{ include "glassflow-etl.fullname" . }}-usage-stats-pre-delete-{{ .Release.Revision }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "glassflow-etl.labels" . | nindent 4 }}
     app.kubernetes.io/component: usage-stats
   annotations:
-    "helm.sh/hook": post-install
-    "helm.sh/hook-weight": "10"
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-    "helm.sh/hook-timeout": "120"  # 2 minutes timeout
+    "helm.sh/hook-timeout": "120"
 spec:
   backoffLimit: 2
   ttlSecondsAfterFinished: 300
@@ -31,7 +31,9 @@ spec:
             - sh
             - -c
             - |
-              set -e
+              # Usage stats hook - failures are non-blocking
+              set +e  # Don't exit on errors - make failures non-blocking
+              
               apk add --no-cache jq >/dev/null 2>&1
               
               KUBE_API="https://kubernetes.default.svc"
@@ -40,32 +42,32 @@ spec:
               NAMESPACE="{{ .Release.Namespace }}"
               SECRET_NAME="{{ .Release.Name }}-usage-stats-config"
               
-              echo "Reading usage-stats secret..."
-              SECRET_JSON=$(curl -sS --cacert "$CA_CERT" \
+              echo "Usage stats: Reading secret..."
+              SECRET_JSON=$(curl -sS --max-time 5 --cacert "$CA_CERT" \
                 -H "Authorization: Bearer $TOKEN" \
-                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME")
+                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
               
-              INSTALLATION_ID=$(echo "$SECRET_JSON" | jq -r '.data.installation_id // empty' | base64 -d)
-              USAGE_STATS_ENDPOINT=$(echo "$SECRET_JSON" | jq -r '.data.usage_stats_endpoint // empty' | base64 -d)
-              USAGE_STATS_USERNAME=$(echo "$SECRET_JSON" | jq -r '.data.usage_stats_username // empty' | base64 -d)
-              USAGE_STATS_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.data.usage_stats_password // empty' | base64 -d)
+              INSTALLATION_ID=$(echo "$SECRET_JSON" | jq -r '.data.installation_id // empty' | base64 -d 2>/dev/null)
+              USAGE_STATS_ENDPOINT=$(echo "$SECRET_JSON" | jq -r '.data.usage_stats_endpoint // empty' | base64 -d 2>/dev/null)
+              USAGE_STATS_USERNAME=$(echo "$SECRET_JSON" | jq -r '.data.usage_stats_username // empty' | base64 -d 2>/dev/null)
+              USAGE_STATS_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.data.usage_stats_password // empty' | base64 -d 2>/dev/null)
               
               if [ -z "$INSTALLATION_ID" ] || [ -z "$USAGE_STATS_ENDPOINT" ] || [ -z "$USAGE_STATS_USERNAME" ] || [ -z "$USAGE_STATS_PASSWORD" ]; then
-                echo "UsageStat secret incomplete, skipping"
+                echo "WARNING: Usage stats - Secret incomplete, skipping event"
                 exit 0
               fi
               
-              echo "Getting auth token..."
-              AUTH_RESP=$(curl -sS -X POST \
+              echo "Usage stats: Getting auth token..."
+              AUTH_RESP=$(curl -sS --max-time 10 -X POST \
                 "$USAGE_STATS_ENDPOINT/auth/login" \
                 -H "Content-Type: application/json" \
                 -H "accept: application/json" \
-                -d "{\"username\":\"$USAGE_STATS_USERNAME\",\"password\":\"$USAGE_STATS_PASSWORD\"}")
+                -d "{\"username\":\"$USAGE_STATS_USERNAME\",\"password\":\"$USAGE_STATS_PASSWORD\"}" 2>&1)
               
-              ACCESS_TOKEN=$(echo "$AUTH_RESP" | jq -r '.access_token // empty')
+              ACCESS_TOKEN=$(echo "$AUTH_RESP" | jq -r '.access_token // empty' 2>/dev/null)
               if [ -z "$ACCESS_TOKEN" ]; then
-                echo "Failed to get access token"
-                exit 1
+                echo "WARNING: Usage stats - Failed to get access token, continuing anyway"
+                exit 0
               fi
               
               TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
@@ -75,34 +77,35 @@ spec:
                 --arg ts "$TIMESTAMP" \
                 '{
                   "installation_id": $inst_id,
-                  "event_name": "helm_install_completed",
+                  "event_name": "helm_uninstall",
                   "event_source": "helm",
                   "timestamp": $ts,
                   "properties": {}
-                }')
+                }' 2>/dev/null)
               
-              echo "Sending helm_install_completed event..."
-              STATS_RESP=$(curl -sS -w "\n%{http_code}" -X POST \
+              if [ -z "$EVENT_PAYLOAD" ]; then
+                echo "WARNING: Usage stats - Failed to create event payload, continuing anyway"
+                exit 0
+              fi
+              
+              echo "Usage stats: Sending helm_uninstall event..."
+              STATS_RESP=$(curl -sS --max-time 10 -w "\n%{http_code}" -X POST \
                 "$USAGE_STATS_ENDPOINT/track" \
                 -H "Content-Type: application/json" \
                 -H "accept: application/json" \
                 -H "Authorization: Bearer $ACCESS_TOKEN" \
-                -d "$EVENT_PAYLOAD")
+                -d "$EVENT_PAYLOAD" 2>&1)
               
               HTTP_CODE=$(echo "$STATS_RESP" | tail -n1)
               BODY=$(echo "$STATS_RESP" | sed '$d')
               
               if [ "$HTTP_CODE" != "200" ]; then
-                echo "Failed to send usage-stats event: HTTP $HTTP_CODE"
-                echo "$BODY"
-                exit 1
+                echo "WARNING: Usage stats - Failed to send event: HTTP $HTTP_CODE"
+                echo "Response: $BODY"
+                # Continue anyway - don't block uninstall
+              else
+                echo "Usage stats: Event sent successfully"
               fi
               
-              echo "UsageStat event sent successfully"
-          env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              exit 0
 {{- end }}
-

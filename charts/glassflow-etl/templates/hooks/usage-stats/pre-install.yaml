@@ -11,7 +11,7 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-    "helm.sh/hook-timeout": "120"  # 2 minutes timeout
+    "helm.sh/hook-timeout": "120"
 spec:
   backoffLimit: 2
   ttlSecondsAfterFinished: 300
@@ -31,7 +31,9 @@ spec:
             - sh
             - -c
             - |
-              set -e
+              # Usage stats hook - failures are non-blocking
+              set +e  # Don't exit on errors - make failures non-blocking
+              
               apk add --no-cache jq uuidgen >/dev/null 2>&1
               
               INSTALLATION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
@@ -45,20 +47,21 @@ spec:
               NAMESPACE="{{ .Release.Namespace }}"
               SECRET_NAME="{{ .Release.Name }}-usage-stats-config"
               
-              echo "Getting auth token..."
-              AUTH_RESP=$(curl -sS -X POST \
+              echo "Usage stats: Getting auth token..."
+              AUTH_RESP=$(curl -sS --max-time 10 -X POST \
                 "$USAGE_STATS_ENDPOINT/auth/login" \
                 -H "Content-Type: application/json" \
                 -H "accept: application/json" \
-                -d "{\"username\":\"$USAGE_STATS_USERNAME\",\"password\":\"$USAGE_STATS_PASSWORD\"}")
+                -d "{\"username\":\"$USAGE_STATS_USERNAME\",\"password\":\"$USAGE_STATS_PASSWORD\"}" 2>&1)
               
-              ACCESS_TOKEN=$(echo "$AUTH_RESP" | jq -r '.access_token // empty')
+              ACCESS_TOKEN=$(echo "$AUTH_RESP" | jq -r '.access_token // empty' 2>/dev/null)
               if [ -z "$ACCESS_TOKEN" ]; then
-                echo "Failed to get access token"
-                exit 1
+                echo "WARNING: Usage stats - Failed to get access token, continuing anyway"
+                echo "Auth response: $AUTH_RESP"
+                exit 0
               fi
               
-              echo "Detecting cluster info..."
+              echo "Usage stats: Detecting cluster info..."
               {{- if .Values.global.usageStats.cluster_provider }}
               CLUSTER_PROVIDER="{{ .Values.global.usageStats.cluster_provider }}"
               {{- else }}
@@ -72,8 +75,8 @@ spec:
               fi
               {{- end }}
               
-              K8S_VERSION=$(curl -sS --cacert "$CA_CERT" -H "Authorization: Bearer $TOKEN" \
-                "$KUBE_API/version" | jq -r '.gitVersion // "unknown"')
+              K8S_VERSION=$(curl -sS --max-time 5 --cacert "$CA_CERT" -H "Authorization: Bearer $TOKEN" \
+                "$KUBE_API/version" 2>/dev/null | jq -r '.gitVersion // "unknown"')
               
               CHART_VERSION="{{ .Chart.Version }}"
               API_IMAGE_TAG="{{ .Values.api.image.tag }}"
@@ -146,26 +149,33 @@ spec:
                       "memory_limit": $op_mem_lim
                     }
                   }
-                }')
+                }' 2>/dev/null)
               
-              echo "Sending helm_install event..."
-              STATS_RESP=$(curl -sS -w "\n%{http_code}" -X POST \
+              if [ -z "$EVENT_PAYLOAD" ]; then
+                echo "WARNING: Usage stats - Failed to create event payload, continuing anyway"
+                exit 0
+              fi
+              
+              echo "Usage stats: Sending helm_install event..."
+              STATS_RESP=$(curl -sS --max-time 10 -w "\n%{http_code}" -X POST \
                 "$USAGE_STATS_ENDPOINT/track" \
                 -H "Content-Type: application/json" \
                 -H "accept: application/json" \
                 -H "Authorization: Bearer $ACCESS_TOKEN" \
-                -d "$EVENT_PAYLOAD")
+                -d "$EVENT_PAYLOAD" 2>&1)
               
               HTTP_CODE=$(echo "$STATS_RESP" | tail -n1)
               BODY=$(echo "$STATS_RESP" | sed '$d')
               
               if [ "$HTTP_CODE" != "200" ]; then
-                echo "Failed to send usage stats event: HTTP $HTTP_CODE"
-                echo "$BODY"
-                exit 1
+                echo "WARNING: Usage stats - Failed to send event: HTTP $HTTP_CODE"
+                echo "Response: $BODY"
+                # Continue anyway - don't block installation
+              else
+                echo "Usage stats: Event sent successfully"
               fi
               
-              echo "Creating usage stats secret..."
+              echo "Usage stats: Creating/updating secret..."
               SECRET_DATA=$(jq -n \
                 --arg inst_id "$INSTALLATION_ID" \
                 --arg endpoint "$USAGE_STATS_ENDPOINT" \
@@ -176,56 +186,58 @@ spec:
                   "usage_stats_endpoint": $endpoint,
                   "usage_stats_username": $username,
                   "usage_stats_password": $password
-                }')
+                }' 2>/dev/null)
+              
+              if [ -z "$SECRET_DATA" ]; then
+                echo "WARNING: Usage stats - Failed to create secret data, continuing anyway"
+                exit 0
+              fi
               
               # Try to get existing secret first to preserve metadata
-              EXISTING_SECRET=$(curl -sS --cacert "$CA_CERT" \
+              EXISTING_SECRET=$(curl -sS --max-time 5 --cacert "$CA_CERT" \
                 -H "Authorization: Bearer $TOKEN" \
                 "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
               
               if echo "$EXISTING_SECRET" | jq -e '.kind == "Secret"' >/dev/null 2>&1; then
                 # Secret exists, use PATCH to update it
-                echo "Updating existing usage stats secret..."
-                PATCH_RESP=$(curl -sS -w "\n%{http_code}" --cacert "$CA_CERT" -X PATCH \
+                echo "Usage stats: Updating existing secret..."
+                PATCH_RESP=$(curl -sS --max-time 5 -w "\n%{http_code}" --cacert "$CA_CERT" -X PATCH \
                   -H "Authorization: Bearer $TOKEN" \
                   -H "Content-Type: application/merge-patch+json" \
                   -d "$(echo "$SECRET_DATA" | jq '{data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
-                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME")
+                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>&1)
                 
                 PATCH_HTTP_CODE=$(echo "$PATCH_RESP" | tail -n1)
                 PATCH_BODY=$(echo "$PATCH_RESP" | sed '$d')
                 
                 if [ "$PATCH_HTTP_CODE" != "200" ] && [ "$PATCH_HTTP_CODE" != "201" ]; then
-                  echo "ERROR: Failed to update usage stats secret: HTTP $PATCH_HTTP_CODE"
-                  echo "$PATCH_BODY"
-                  exit 1
+                  echo "WARNING: Usage stats - Failed to update secret: HTTP $PATCH_HTTP_CODE"
+                  echo "Response: $PATCH_BODY"
+                  # Continue anyway - don't block installation
+                else
+                  echo "Usage stats: Secret updated successfully"
                 fi
-                echo "Usage stats secret updated successfully"
               else
                 # Secret doesn't exist, create it with POST
-                echo "Creating new usage stats secret..."
-                POST_RESP=$(curl -sS -w "\n%{http_code}" --cacert "$CA_CERT" -X POST \
+                echo "Usage stats: Creating new secret..."
+                POST_RESP=$(curl -sS --max-time 5 -w "\n%{http_code}" --cacert "$CA_CERT" -X POST \
                   -H "Authorization: Bearer $TOKEN" \
                   -H "Content-Type: application/json" \
                   -d "$(echo "$SECRET_DATA" | jq '{kind: "Secret", apiVersion: "v1", metadata: {name: "'"$SECRET_NAME"'", namespace: "'"$NAMESPACE"'"}, type: "Opaque", data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
-                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets")
+                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets" 2>&1)
                 
                 POST_HTTP_CODE=$(echo "$POST_RESP" | tail -n1)
                 POST_BODY=$(echo "$POST_RESP" | sed '$d')
                 
                 if [ "$POST_HTTP_CODE" != "200" ] && [ "$POST_HTTP_CODE" != "201" ]; then
-                  echo "ERROR: Failed to create usage stats secret: HTTP $POST_HTTP_CODE"
-                  echo "$POST_BODY"
-                  exit 1
+                  echo "WARNING: Usage stats - Failed to create secret: HTTP $POST_HTTP_CODE"
+                  echo "Response: $POST_BODY"
+                  # Continue anyway - don't block installation
+                else
+                  echo "Usage stats: Secret created successfully"
                 fi
-                echo "Usage stats secret created successfully"
               fi
               
-              echo "Usage stats setup completed"
-          env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              echo "Usage stats: Setup completed (non-blocking)"
+              exit 0
 {{- end }}
-
