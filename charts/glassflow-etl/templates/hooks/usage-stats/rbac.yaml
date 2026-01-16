@@ -10,6 +10,7 @@ metadata:
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-9"
+    "helm.sh/hook-delete-policy": before-hook-creation
 rules:
 # Rule 1: Allow create without resourceNames (required for creating new secrets)
 - apiGroups:
@@ -40,6 +41,7 @@ metadata:
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-9"
+    "helm.sh/hook-delete-policy": before-hook-creation
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
