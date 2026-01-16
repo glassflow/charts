@@ -301,6 +301,8 @@ postgresql:
   auth:
     enabled: true
     database: "glassflow"
+    # PostgreSQL SSL mode for connection URL
+    # Valid values: disable, allow, prefer, require, verify-ca, verify-full
     sslmode: "disable"
     # Please update this for production deployments
     username: "glassflow"
