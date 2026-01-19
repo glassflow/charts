@@ -1,0 +1,16 @@
+properties:
+  postgresql:
+    properties:
+      auth:
+        properties:
+          sslmode:
+            type: string
+            enum:
+              - disable
+              - allow
+              - prefer
+              - require
+              - verify-ca
+              - verify-full
+            description: PostgreSQL SSL mode
+

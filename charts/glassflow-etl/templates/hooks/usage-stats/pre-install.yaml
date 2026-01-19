@@ -1,0 +1,243 @@
+{{- if .Values.global.usageStats.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "glassflow-etl.fullname" . }}-usage-stats-pre-install-{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: usage-stats
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-timeout": "120"
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: usage-stats
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
+      containers:
+        - name: usage-stats-hook
+          image: alpine/curl:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              # Usage stats hook - failures are non-blocking
+              set +e  # Don't exit on errors - make failures non-blocking
+              
+              apk add --no-cache jq uuidgen >/dev/null 2>&1
+              
+              INSTALLATION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+              USAGE_STATS_ENDPOINT="https://tracking.glassflow.dev/api/v1"
+              USAGE_STATS_USERNAME="5PR3vzYGGlYttkBXRTYuzw=="
+              USAGE_STATS_PASSWORD="5tJcYQNR85KKyOwpeIFVdGqGIOgFwxmWEHu0t7WxBbo="
+              
+              KUBE_API="https://kubernetes.default.svc"
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              NAMESPACE="{{ .Release.Namespace }}"
+              SECRET_NAME="{{ .Release.Name }}-usage-stats-config"
+              
+              echo "Usage stats: Getting auth token..."
+              AUTH_RESP=$(curl -sS --max-time 10 -X POST \
+                "$USAGE_STATS_ENDPOINT/auth/login" \
+                -H "Content-Type: application/json" \
+                -H "accept: application/json" \
+                -d "{\"username\":\"$USAGE_STATS_USERNAME\",\"password\":\"$USAGE_STATS_PASSWORD\"}" 2>&1)
+              
+              ACCESS_TOKEN=$(echo "$AUTH_RESP" | jq -r '.access_token // empty' 2>/dev/null)
+              if [ -z "$ACCESS_TOKEN" ]; then
+                echo "WARNING: Usage stats - Failed to get access token, continuing anyway"
+                echo "Auth response: $AUTH_RESP"
+                exit 0
+              fi
+              
+              echo "Usage stats: Detecting cluster info..."
+              {{- if .Values.global.usageStats.cluster_provider }}
+              CLUSTER_PROVIDER="{{ .Values.global.usageStats.cluster_provider }}"
+              {{- else }}
+              CLUSTER_PROVIDER="unknown"
+              if curl -sS --max-time 2 -f -H "Metadata-Flavor: Google" http://169.254.169.254/computeMetadata/v1/instance/zone >/dev/null 2>&1; then
+                CLUSTER_PROVIDER="GCP"
+              elif curl -sS --max-time 2 -f http://169.254.169.254/latest/meta-data/instance-id >/dev/null 2>&1; then
+                CLUSTER_PROVIDER="AWS"
+              elif curl -sS --max-time 2 -f -H "Metadata: true" http://169.254.169.254/metadata/instance?api-version=2021-02-01 >/dev/null 2>&1; then
+                CLUSTER_PROVIDER="Azure"
+              fi
+              {{- end }}
+              
+              K8S_VERSION=$(curl -sS --max-time 5 --cacert "$CA_CERT" -H "Authorization: Bearer $TOKEN" \
+                "$KUBE_API/version" 2>/dev/null | jq -r '.gitVersion // "unknown"')
+              
+              CHART_VERSION="{{ .Chart.Version }}"
+              API_IMAGE_TAG="{{ .Values.api.image.tag }}"
+              OPERATOR_IMAGE_TAG="{{ index .Values "glassflow-operator" "controllerManager" "manager" "image" "tag" }}"
+              UI_IMAGE_TAG="{{ .Values.ui.image.tag }}"
+              METRICS_ENABLED="{{ .Values.global.observability.metrics.enabled }}"
+              LOGS_ENABLED="{{ .Values.global.observability.logs.enabled }}"
+              NATS_ENABLED="true"
+              NATS_REPLICAS="3"
+              
+              API_CPU_REQ="{{ .Values.api.resources.requests.cpu }}"
+              API_MEM_REQ="{{ .Values.api.resources.requests.memory }}"
+              API_CPU_LIM="{{ .Values.api.resources.limits.cpu }}"
+              API_MEM_LIM="{{ .Values.api.resources.limits.memory }}"
+              
+              OPERATOR_CPU_REQ="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "requests" "cpu" }}"
+              OPERATOR_MEM_REQ="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "requests" "memory" }}"
+              OPERATOR_CPU_LIM="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "limits" "cpu" }}"
+              OPERATOR_MEM_LIM="{{ index .Values "glassflow-operator" "controllerManager" "manager" "resources" "limits" "memory" }}"
+              
+              TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+              
+              EVENT_PAYLOAD=$(jq -n \
+                --arg inst_id "$INSTALLATION_ID" \
+                --arg ts "$TIMESTAMP" \
+                --arg chart_ver "$CHART_VERSION" \
+                --arg api_tag "$API_IMAGE_TAG" \
+                --arg op_tag "$OPERATOR_IMAGE_TAG" \
+                --arg ui_tag "$UI_IMAGE_TAG" \
+                --arg metrics "$METRICS_ENABLED" \
+                --arg logs "$LOGS_ENABLED" \
+                --arg nats "$NATS_ENABLED" \
+                --arg nats_repl "$NATS_REPLICAS" \
+                --arg provider "$CLUSTER_PROVIDER" \
+                --arg k8s_ver "$K8S_VERSION" \
+                --arg api_cpu_req "$API_CPU_REQ" \
+                --arg api_mem_req "$API_MEM_REQ" \
+                --arg api_cpu_lim "$API_CPU_LIM" \
+                --arg api_mem_lim "$API_MEM_LIM" \
+                --arg op_cpu_req "$OPERATOR_CPU_REQ" \
+                --arg op_mem_req "$OPERATOR_MEM_REQ" \
+                --arg op_cpu_lim "$OPERATOR_CPU_LIM" \
+                --arg op_mem_lim "$OPERATOR_MEM_LIM" \
+                '{
+                  "installation_id": $inst_id,
+                  "event_name": "helm_install",
+                  "event_source": "helm",
+                  "timestamp": $ts,
+                  "properties": {
+                    "chart_version": $chart_ver,
+                    "api_image_tag": $api_tag,
+                    "operator_image_tag": $op_tag,
+                    "ui_image_tag": $ui_tag,
+                    "metrics_enabled": ($metrics == "true"),
+                    "logs_enabled": ($logs == "true"),
+                    "nats_enabled": ($nats == "true"),
+                    "nats_replicas": ($nats_repl | tonumber),
+                    "cluster_provider": $provider,
+                    "k8s_version": $k8s_ver,
+                    "api_resources": {
+                      "cpu_request": $api_cpu_req,
+                      "memory_request": $api_mem_req,
+                      "cpu_limit": $api_cpu_lim,
+                      "memory_limit": $api_mem_lim
+                    },
+                    "operator_resources": {
+                      "cpu_request": $op_cpu_req,
+                      "memory_request": $op_mem_req,
+                      "cpu_limit": $op_cpu_lim,
+                      "memory_limit": $op_mem_lim
+                    }
+                  }
+                }' 2>/dev/null)
+              
+              if [ -z "$EVENT_PAYLOAD" ]; then
+                echo "WARNING: Usage stats - Failed to create event payload, continuing anyway"
+                exit 0
+              fi
+              
+              echo "Usage stats: Sending helm_install event..."
+              STATS_RESP=$(curl -sS --max-time 10 -w "\n%{http_code}" -X POST \
+                "$USAGE_STATS_ENDPOINT/track" \
+                -H "Content-Type: application/json" \
+                -H "accept: application/json" \
+                -H "Authorization: Bearer $ACCESS_TOKEN" \
+                -d "$EVENT_PAYLOAD" 2>&1)
+              
+              HTTP_CODE=$(echo "$STATS_RESP" | tail -n1)
+              BODY=$(echo "$STATS_RESP" | sed '$d')
+              
+              if [ "$HTTP_CODE" != "200" ]; then
+                echo "WARNING: Usage stats - Failed to send event: HTTP $HTTP_CODE"
+                echo "Response: $BODY"
+                # Continue anyway - don't block installation
+              else
+                echo "Usage stats: Event sent successfully"
+              fi
+              
+              echo "Usage stats: Creating/updating secret..."
+              SECRET_DATA=$(jq -n \
+                --arg inst_id "$INSTALLATION_ID" \
+                --arg endpoint "$USAGE_STATS_ENDPOINT" \
+                --arg username "$USAGE_STATS_USERNAME" \
+                --arg password "$USAGE_STATS_PASSWORD" \
+                '{
+                  "installation_id": $inst_id,
+                  "usage_stats_endpoint": $endpoint,
+                  "usage_stats_username": $username,
+                  "usage_stats_password": $password
+                }' 2>/dev/null)
+              
+              if [ -z "$SECRET_DATA" ]; then
+                echo "WARNING: Usage stats - Failed to create secret data, continuing anyway"
+                exit 0
+              fi
+              
+              # Try to get existing secret first to preserve metadata
+              EXISTING_SECRET=$(curl -sS --max-time 5 --cacert "$CA_CERT" \
+                -H "Authorization: Bearer $TOKEN" \
+                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
+              
+              if echo "$EXISTING_SECRET" | jq -e '.kind == "Secret"' >/dev/null 2>&1; then
+                # Secret exists, use PATCH to update it
+                echo "Usage stats: Updating existing secret..."
+                PATCH_RESP=$(curl -sS --max-time 5 -w "\n%{http_code}" --cacert "$CA_CERT" -X PATCH \
+                  -H "Authorization: Bearer $TOKEN" \
+                  -H "Content-Type: application/merge-patch+json" \
+                  -d "$(echo "$SECRET_DATA" | jq '{data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
+                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>&1)
+                
+                PATCH_HTTP_CODE=$(echo "$PATCH_RESP" | tail -n1)
+                PATCH_BODY=$(echo "$PATCH_RESP" | sed '$d')
+                
+                if [ "$PATCH_HTTP_CODE" != "200" ] && [ "$PATCH_HTTP_CODE" != "201" ]; then
+                  echo "WARNING: Usage stats - Failed to update secret: HTTP $PATCH_HTTP_CODE"
+                  echo "Response: $PATCH_BODY"
+                  # Continue anyway - don't block installation
+                else
+                  echo "Usage stats: Secret updated successfully"
+                fi
+              else
+                # Secret doesn't exist, create it with POST
+                echo "Usage stats: Creating new secret..."
+                POST_RESP=$(curl -sS --max-time 5 -w "\n%{http_code}" --cacert "$CA_CERT" -X POST \
+                  -H "Authorization: Bearer $TOKEN" \
+                  -H "Content-Type: application/json" \
+                  -d "$(echo "$SECRET_DATA" | jq '{kind: "Secret", apiVersion: "v1", metadata: {name: "'"$SECRET_NAME"'", namespace: "'"$NAMESPACE"'"}, type: "Opaque", data: (. | to_entries | map({key: .key, value: (.value | @base64)})) | from_entries}')" \
+                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets" 2>&1)
+                
+                POST_HTTP_CODE=$(echo "$POST_RESP" | tail -n1)
+                POST_BODY=$(echo "$POST_RESP" | sed '$d')
+                
+                if [ "$POST_HTTP_CODE" != "200" ] && [ "$POST_HTTP_CODE" != "201" ]; then
+                  echo "WARNING: Usage stats - Failed to create secret: HTTP $POST_HTTP_CODE"
+                  echo "Response: $POST_BODY"
+                  # Continue anyway - don't block installation
+                else
+                  echo "Usage stats: Secret created successfully"
+                fi
+              fi
+              
+              echo "Usage stats: Setup completed (non-blocking)"
+              exit 0
+{{- end }}

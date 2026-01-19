@@ -1,0 +1,53 @@
+{{- if and .Values.serviceAccount.create .Values.global.usageStats.enabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "glassflow-etl.fullname" . }}-usage-stats-secret-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-9"
+    "helm.sh/hook-delete-policy": before-hook-creation
+rules:
+# Rule 1: Allow create without resourceNames (required for creating new secrets)
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+# Rule 2: Allow get/patch/update on the specific secret name (for existing secrets)
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  resourceNames:
+  - {{ .Release.Name }}-usage-stats-config
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "glassflow-etl.fullname" . }}-usage-stats-secret-manager-binding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-9"
+    "helm.sh/hook-delete-policy": before-hook-creation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "glassflow-etl.fullname" . }}-usage-stats-secret-manager
+subjects:
+- kind: ServiceAccount
+  name: {{ include "glassflow-etl.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
