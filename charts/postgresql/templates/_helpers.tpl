@@ -51,6 +51,18 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+PVC labels - excludes helm.sh/chart to prevent upgrade issues
+PVCs are immutable once created, so we can't include version-specific labels
+*/}}
+{{- define "postgresql.pvcLabels" -}}
+{{ include "postgresql.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "postgresql.serviceAccountName" -}}
