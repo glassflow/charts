@@ -1,0 +1,24 @@
+{{- if .Values.notificationService.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glassflow-notifier-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: glassflow-notifier
+data:
+  GLASSFLOW_NATS_SERVER: "{{ .Values.global.nats.address | default (printf "nats://%s-nats.%s.svc.cluster.local:4222" .Release.Name .Release.Namespace) }}"
+  NATS_STREAM_NAME: "glassflow-notifications"
+  SLACK_ENABLED: "{{ .Values.notificationService.slack.enabled }}"
+  SLACK_WEBHOOK_URL: "{{ .Values.notificationService.slack.webhookUrl }}"
+  SLACK_DEFAULT_CHANNEL: "{{ .Values.notificationService.slack.defaultChannel }}"
+  EMAIL_ENABLED: "{{ .Values.notificationService.email.enabled }}"
+  SMTP_HOST: "{{ .Values.notificationService.email.smtpHost }}"
+  SMTP_PORT: "{{ .Values.notificationService.email.smtpPort }}"
+  SMTP_USERNAME: "{{ .Values.notificationService.email.smtpUsername }}"
+  SMTP_PASSWORD: "{{ .Values.notificationService.email.smtpPassword }}"
+  EMAIL_FROM_ADDRESS: "{{ .Values.notificationService.email.fromAddress }}"
+  EMAIL_TO_ADDRESS: "{{ .Values.notificationService.email.toAddress }}"
+{{- end }}
+

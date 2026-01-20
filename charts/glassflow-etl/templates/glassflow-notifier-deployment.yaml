@@ -1,0 +1,127 @@
+{{- if .Values.notificationService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-notifier
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.notificationService.replicas }}
+  selector:
+    matchLabels:
+      {{- include "glassflow-etl.selectorLabels" . | nindent 6 }}
+      {{- with .Values.podLabels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      app.kubernetes.io/component: glassflow-notifier
+  template:
+    metadata:
+      labels:
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: glassflow-notifier
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/glassflow-notifier-config: {{ include (print $.Template.BasePath "/glassflow-notifier-configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.postgresql.enabled true }}
+      initContainers:
+        {{- if .Values.postgresql.enabled }}
+        - name: wait-for-postgres
+          image: "busybox:1.35"
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL to be ready..."
+              until nc -z {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local 5432; do
+                echo "PostgreSQL not ready, waiting..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready!"
+        {{- end }}
+        {{- $natsAddress := .Values.global.nats.address | default (printf "nats://%s-nats.%s.svc.cluster.local:4222" .Release.Name .Release.Namespace) }}
+        - name: wait-for-nats
+          image: "busybox:1.35"
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for NATS to be ready..."
+              NATS_URL="{{ $natsAddress }}"
+              # Remove protocol prefix if present
+              NATS_HOST_PORT="${NATS_URL#nats://}"
+              NATS_HOST_PORT="${NATS_HOST_PORT#nats-secure://}"
+              # Extract host and port
+              if echo "$NATS_HOST_PORT" | grep -q ":"; then
+                NATS_HOST=$(echo "$NATS_HOST_PORT" | cut -d: -f1)
+                NATS_PORT=$(echo "$NATS_HOST_PORT" | cut -d: -f2)
+              else
+                NATS_HOST="$NATS_HOST_PORT"
+                NATS_PORT="4222"
+              fi
+              echo "Checking NATS at $NATS_HOST:$NATS_PORT..."
+              until nc -z "$NATS_HOST" "$NATS_PORT"; do
+                echo "NATS not ready, waiting..."
+                sleep 2
+              done
+              echo "NATS is ready!"
+      {{- end }}
+      containers:
+        - name: glassflow-notifier
+          image: "{{ .Values.global.imageRegistry | default "" }}{{ .Values.notificationService.image.repository }}:{{ .Values.notificationService.image.tag }}"
+          imagePullPolicy: {{ .Values.notificationService.image.pullPolicy }}
+          {{- with .Values.notificationService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: glassflow-notifier-config
+          env:
+            {{- if .Values.postgresql.enabled }}
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: glassflow-postgresql
+                  key: connection-url
+            {{- else }}
+            - name: POSTGRES_URL
+              value: {{ .Values.global.postgres_connection_url | quote }}
+            {{- end }}
+            {{- if .Values.notificationService.env }}
+            {{- range .Values.notificationService.env }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+          {{- with .Values.notificationService.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.notificationService.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+{{- end }}
+
