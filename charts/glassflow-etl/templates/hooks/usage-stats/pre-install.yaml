@@ -8,7 +8,7 @@ metadata:
     {{- include "glassflow-etl.labels" . | nindent 4 }}
     app.kubernetes.io/component: usage-stats
   annotations:
-    "helm.sh/hook": pre-install
+    "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     "helm.sh/hook-timeout": "120"
@@ -22,7 +22,7 @@ spec:
         app.kubernetes.io/component: usage-stats
     spec:
       restartPolicy: Never
-      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
+      serviceAccountName: {{ include "glassflow-etl.usageStatsServiceAccountName" . }}
       containers:
         - name: usage-stats-hook
           image: alpine/curl:latest

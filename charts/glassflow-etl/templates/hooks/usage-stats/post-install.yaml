@@ -22,7 +22,7 @@ spec:
         app.kubernetes.io/component: usage-stats
     spec:
       restartPolicy: Never
-      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
+      serviceAccountName: {{ include "glassflow-etl.usageStatsServiceAccountName" . }}
       containers:
         - name: usage-stats-hook
           image: alpine/curl:latest
