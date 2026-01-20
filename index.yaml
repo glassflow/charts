@@ -3,6 +3,34 @@ entries:
   glassflow-etl:
   - apiVersion: v2
     appVersion: 2.8.0
+    created: "2026-01-20T18:11:26.09760838Z"
+    dependencies:
+    - name: glassflow-operator
+      repository: https://glassflow.github.io/glassflow-etl-k8s-operator
+      version: 0.7.1
+    - alias: nats
+      condition: nats.enabled
+      name: nats
+      repository: https://nats-io.github.io/k8s/helm/charts/
+      version: 2.12.3
+    - alias: postgresql
+      condition: postgresql.enabled
+      name: postgresql
+      repository: https://glassflow.github.io/charts
+      version: 0.1.8
+    description: A Helm chart for Kubernetes
+    digest: 6e83ae6c9b1d23c7b17c0f70a32fe03b617b76515df890c3ebdad4a27b4c4647
+    maintainers:
+    - email: help@glassflow.dev
+      name: Glassflow
+      url: https://glassflow.dev
+    name: glassflow-etl
+    type: application
+    urls:
+    - https://github.com/glassflow/charts/releases/download/glassflow-etl-0.5.7/glassflow-etl-0.5.7.tgz
+    version: 0.5.7
+  - apiVersion: v2
+    appVersion: 2.8.0
     created: "2026-01-20T10:51:52.071144056Z"
     dependencies:
     - name: glassflow-operator
@@ -1010,4 +1038,4 @@ entries:
     urls:
     - packages/postgresql-0.1.0.tgz
     version: 0.1.0
-generated: "2026-01-20T10:51:52.071452982Z"
+generated: "2026-01-20T18:11:26.098115122Z"
