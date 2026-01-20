@@ -48,6 +48,6 @@ roleRef:
   name: {{ include "glassflow-etl.fullname" . }}-usage-stats-secret-manager
 subjects:
 - kind: ServiceAccount
-  name: {{ include "glassflow-etl.serviceAccountName" . }}
+  name: {{ include "glassflow-etl.usageStatsServiceAccountName" . }}
   namespace: {{ .Release.Namespace }}
 {{- end }}
