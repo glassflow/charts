@@ -324,6 +324,7 @@ postgresql:
   persistence:
     enabled: true
     size: 10Gi
+    storageClass: ""
   resources:
     requests:
       memory: "512Mi"
