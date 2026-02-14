@@ -499,3 +499,67 @@ autoscaling:
   # Target memory utilization percentage for scaling (commented out)
   # Uncomment and set a value to enable memory-based scaling
   # targetMemoryUtilizationPercentage: 80
+
+# =============================================================================
+# NOTIFICATION SERVICE COMPONENT CONFIGURATION
+# =============================================================================
+# Notification service for sending Slack and Email notifications
+notificationService:
+  # Enable or disable the notification service
+  enabled: false
+  replicas: 1
+  image:
+    repository: glassflow-notifier
+    tag: main
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+    limits:
+      memory: "200Mi"
+      cpu: "250m"
+
+  service:
+    type: ClusterIP
+    port: 8082
+    targetPort: 8080
+
+  # Slack Configuration
+  slack:
+    enabled: "false"  # Set to true and add webhook URL
+    webhookUrl: ""  # Add your Slack webhook URL here
+    defaultChannel: "#notifications"
+
+  # Email Configuration
+  email:
+    enabled: "false"  # Set to true and add SMTP details
+    smtpHost: ""  # Add your SMTP host
+    smtpPort: 587
+    smtpUsername: ""  # Add your SMTP username
+    smtpPassword: ""  # Add your SMTP password
+    fromAddress: ""  # Add sender email address
+    toAddress: ""  # Add recipient email address
+
+  # Environment variables for the notification service
+  # Example:
+  # env:
+  #   - name: CUSTOM_VAR
+  #     value: "custom_value"
+  env: []
+
+  # Liveness probe configuration (optional)
+  # livenessProbe:
+  #   httpGet:
+  #     path: /health
+  #     port: 8080
+  #   initialDelaySeconds: 30
+  #   periodSeconds: 10
+
+  # Readiness probe configuration (optional)
+  # readinessProbe:
+  #   httpGet:
+  #     path: /ready
+  #     port: 8080
+  #   initialDelaySeconds: 5
+  #   periodSeconds: 5
