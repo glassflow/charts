@@ -98,6 +98,7 @@ api:
 # =============================================================================
 # Frontend UI service configuration for the GlassFlow ETL application
 ui:
+  enabled: true
   replicas: 1
   image:
     repository: glassflow-etl-fe
