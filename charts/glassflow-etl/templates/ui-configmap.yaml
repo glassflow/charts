@@ -8,6 +8,7 @@ metadata:
     {{- include "glassflow-etl.labels" . | nindent 4 }}
     app.kubernetes.io/component: ui
 data:
+  HOSTNAME: "0.0.0.0"
   NEXT_PUBLIC_API_URL: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8081"
   NEXT_PUBLIC_IN_DOCKER: "false"
   NEXT_PUBLIC_ANALYTICS_ENABLED: "{{ .Values.global.usageStats.enabled }}"
