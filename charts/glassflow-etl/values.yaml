@@ -50,7 +50,7 @@ global:
   # Encryption configuration for connection credentials
   encryption:
     # Enable credential encryption (encrypts Kafka and ClickHouse connection details)
-    enabled: true
+    enabled: false
     # Provide your own Kubernetes secret (required when enabled=true)
     # The chart does not create this secret.
     existingSecret:
