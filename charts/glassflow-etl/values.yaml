@@ -22,7 +22,7 @@ global:
     # address: ""
     stream:
       maxAge: 24h
-      maxBytes: 10GB
+      maxBytes: 0
 
   # Pipelines namespace configuration
   pipelines:
