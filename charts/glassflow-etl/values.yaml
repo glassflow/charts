@@ -16,6 +16,15 @@ global:
       enabled: false
       exporter:
         otlp: {}
+    # OpenTelemetry collector resources (used when metrics or logs are enabled)
+    otelCollector:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
   nats:
     # NATS address for the operator to connect to
     # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222 if not specified
