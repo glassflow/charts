@@ -50,14 +50,12 @@ global:
   # Encryption configuration for connection credentials
   encryption:
     # Enable credential encryption (encrypts Kafka and ClickHouse connection details)
-    enabled: true
-    # Use existing secret - Your own secret (recommended for production)
+    enabled: false
+    # Provide your own Kubernetes secret (required when enabled=true)
+    # The chart does not create this secret.
     existingSecret:
       name: ""  # e.g., "glassflow-encryption-key"
       key: "encryption-key"  # Key name in secret
-    # Or let Helm generate a secret (for development/testing)
-    createSecret: true
-    secretName: ""  # Defaults to "{{ .Release.Name }}-encryption-key" if empty
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
