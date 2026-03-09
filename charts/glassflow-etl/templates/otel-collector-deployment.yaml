@@ -23,12 +23,7 @@ spec:
           - "/otelcol-contrib"
           - "--config=/etc/otel-collector-config.yaml"
         resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
+          {{- toYaml (default (dict "requests" (dict "cpu" "100m" "memory" "128Mi") "limits" (dict "cpu" "500m" "memory" "512Mi")) .Values.global.observability.otelCollector.resources) | nindent 10 }}
         ports:
         - containerPort: 4317
           name: otlp-grpc
