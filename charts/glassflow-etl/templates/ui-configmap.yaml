@@ -33,4 +33,25 @@ data:
   {{- if .Values.ui.kafkaGateway.enabled }}
   KAFKA_GATEWAY_URL: "http://localhost:{{ .Values.ui.kafkaGateway.port }}"
   {{- end }}
+  # Pipeline resource defaults (individual vars for build/runtime override; same source as API)
+  NEXT_PUBLIC_NATS_MAX_STREAM_AGE: {{ .Values.global.nats.stream.maxAge | default "24h" | quote }}
+  NEXT_PUBLIC_NATS_MAX_STREAM_BYTES: {{ .Values.global.nats.stream.maxBytes | default "0" | quote }}
+  NEXT_PUBLIC_INGESTOR_CPU_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.ingestor.resources.requests.cpu | default "100m" | quote }}
+  NEXT_PUBLIC_INGESTOR_CPU_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.ingestor.resources.limits.cpu | default "1500m" | quote }}
+  NEXT_PUBLIC_INGESTOR_MEMORY_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.ingestor.resources.requests.memory | default "128Mi" | quote }}
+  NEXT_PUBLIC_INGESTOR_MEMORY_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.ingestor.resources.limits.memory | default "1.5Gi" | quote }}
+  NEXT_PUBLIC_JOIN_CPU_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.join.resources.requests.cpu | default "100m" | quote }}
+  NEXT_PUBLIC_JOIN_CPU_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.join.resources.limits.cpu | default "1500m" | quote }}
+  NEXT_PUBLIC_JOIN_MEMORY_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.join.resources.requests.memory | default "128Mi" | quote }}
+  NEXT_PUBLIC_JOIN_MEMORY_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.join.resources.limits.memory | default "1.5Gi" | quote }}
+  NEXT_PUBLIC_SINK_CPU_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.sink.resources.requests.cpu | default "100m" | quote }}
+  NEXT_PUBLIC_SINK_CPU_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.sink.resources.limits.cpu | default "1500m" | quote }}
+  NEXT_PUBLIC_SINK_MEMORY_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.sink.resources.requests.memory | default "128Mi" | quote }}
+  NEXT_PUBLIC_SINK_MEMORY_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.sink.resources.limits.memory | default "1.5Gi" | quote }}
+  NEXT_PUBLIC_DEDUP_CPU_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.resources.requests.cpu | default "100m" | quote }}
+  NEXT_PUBLIC_DEDUP_CPU_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.resources.limits.cpu | default "1500m" | quote }}
+  NEXT_PUBLIC_DEDUP_MEMORY_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.resources.requests.memory | default "128Mi" | quote }}
+  NEXT_PUBLIC_DEDUP_MEMORY_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.resources.limits.memory | default "1.5Gi" | quote }}
+  NEXT_PUBLIC_DEDUP_STORAGE_SIZE: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.storage.size | default "10Gi" | quote }}
+  NEXT_PUBLIC_DEDUP_STORAGE_CLASS: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.storage.className | default "" | quote }}
 {{- end }}
