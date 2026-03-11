@@ -183,6 +183,9 @@ glassflow-operator:
   controllerManager:
     replicas: 1
     manager:
+      # Maximum duration a reconcile operation can run before timing out.
+      # Must be a valid Go duration string (e.g. 15m, 1h).
+      reconcileTimeout: 15m
       image:
         repository: glassflow-etl-k8s-operator
         tag: v2.0.0
