@@ -1,3 +1,4 @@
+{{- if .Values.ui.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -90,6 +91,7 @@ spec:
             timeoutSeconds: 2
             failureThreshold: 2
         {{- end }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -310,7 +312,7 @@ spec:
           volumeMounts:
             - name: logs
               mountPath: /tmp/logs/glassflow
-            {{- if and .Values.global.encryption.enabled (or .Values.global.encryption.existingSecret.name .Values.global.encryption.createSecret) }}
+            {{- if and .Values.global.encryption.enabled .Values.global.encryption.existingSecret.name }}
             - name: encryption-key
               mountPath: /etc/glassflow/secrets
               readOnly: true
@@ -329,10 +331,10 @@ spec:
       volumes:
         - name: logs
           emptyDir: {}
-        {{- if and .Values.global.encryption.enabled (or .Values.global.encryption.existingSecret.name .Values.global.encryption.createSecret) }}
+        {{- if and .Values.global.encryption.enabled .Values.global.encryption.existingSecret.name }}
         - name: encryption-key
           secret:
-            secretName: {{ if .Values.global.encryption.existingSecret.name }}{{ .Values.global.encryption.existingSecret.name }}{{ else }}{{ .Values.global.encryption.secretName | default (printf "%s-encryption-key" .Release.Name) }}{{ end }}
+            secretName: {{ .Values.global.encryption.existingSecret.name }}
             defaultMode: 0444
             items:
               - key: {{ .Values.global.encryption.existingSecret.key | default "encryption-key" }}

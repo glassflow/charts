@@ -18,3 +18,31 @@ data:
   GLASSFLOW_OTEL_LOGS_ENABLED: "{{ .Values.global.observability.logs.enabled }}"
   GLASSFLOW_OTEL_METRICS_ENABLED: "{{ .Values.global.observability.metrics.enabled }}"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://{{ .Release.Name }}-otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4318"
+
+  NATS_MAX_STREAM_AGE: {{ .Values.global.nats.stream.maxAge | quote }}
+  NATS_MAX_STREAM_BYTES: {{ .Values.global.nats.stream.maxBytes | quote }}
+
+  INGESTOR_CPU_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.ingestor.resources.requests.cpu | quote }}
+  INGESTOR_CPU_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.ingestor.resources.limits.cpu | quote }}
+  INGESTOR_MEMORY_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.ingestor.resources.requests.memory | quote }}
+  INGESTOR_MEMORY_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.ingestor.resources.limits.memory | quote }}
+
+  JOIN_CPU_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.join.resources.requests.cpu | quote }}
+  JOIN_CPU_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.join.resources.limits.cpu | quote }}
+  JOIN_MEMORY_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.join.resources.requests.memory | quote }}
+  JOIN_MEMORY_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.join.resources.limits.memory | quote }}
+
+  SINK_CPU_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.sink.resources.requests.cpu | quote }}
+  SINK_CPU_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.sink.resources.limits.cpu | quote }}
+  SINK_MEMORY_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.sink.resources.requests.memory | quote }}
+  SINK_MEMORY_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.sink.resources.limits.memory | quote }}
+
+  DEDUP_CPU_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.resources.requests.cpu | quote }}
+  DEDUP_CPU_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.resources.limits.cpu | quote }}
+  DEDUP_MEMORY_REQUEST: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.resources.requests.memory | quote }}
+  DEDUP_MEMORY_LIMIT: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.resources.limits.memory | quote }}
+
+  DEDUP_STORAGE_SIZE: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.storage.size | quote }}
+  DEDUP_STORAGE_CLASS: {{ (index .Values "glassflow-operator").glassflowComponents.dedup.storage.className | quote }}
+
+

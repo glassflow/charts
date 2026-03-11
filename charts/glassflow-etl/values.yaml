@@ -16,13 +16,22 @@ global:
       enabled: false
       exporter:
         otlp: {}
+    # OpenTelemetry collector resources (used when metrics or logs are enabled)
+    otelCollector:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
   nats:
     # NATS address for the operator to connect to
     # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222 if not specified
     # address: ""
     stream:
       maxAge: 24h
-      maxBytes: 10GB
+      maxBytes: 0
 
   # Pipelines namespace configuration
   pipelines:
@@ -50,14 +59,12 @@ global:
   # Encryption configuration for connection credentials
   encryption:
     # Enable credential encryption (encrypts Kafka and ClickHouse connection details)
-    enabled: true
-    # Use existing secret - Your own secret (recommended for production)
+    enabled: false
+    # Provide your own Kubernetes secret (required when enabled=true)
+    # The chart does not create this secret.
     existingSecret:
       name: ""  # e.g., "glassflow-encryption-key"
       key: "encryption-key"  # Key name in secret
-    # Or let Helm generate a secret (for development/testing)
-    createSecret: true
-    secretName: ""  # Defaults to "{{ .Release.Name }}-encryption-key" if empty
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
@@ -67,7 +74,7 @@ api:
   logLevel: "info"
   image:
     repository: glassflow-etl-be
-    tag: v2.10.1
+    tag: v2.11.2
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -98,10 +105,11 @@ api:
 # =============================================================================
 # Frontend UI service configuration for the GlassFlow ETL application
 ui:
+  enabled: true
   replicas: 1
   image:
     repository: glassflow-etl-fe
-    tag: v2.10.1
+    tag: v2.11.2
     pullPolicy: IfNotPresent
   logLevel: "info"
   resources:
@@ -175,9 +183,12 @@ glassflow-operator:
   controllerManager:
     replicas: 1
     manager:
+      # Maximum duration a reconcile operation can run before timing out.
+      # Must be a valid Go duration string (e.g. 15m, 1h).
+      reconcileTimeout: 15m
       image:
         repository: glassflow-etl-k8s-operator
-        tag: v1.8.1
+        tag: v2.0.1
         pullPolicy: IfNotPresent
       resources:
         limits:
@@ -193,7 +204,7 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.10.1
+        tag: v2.11.2
         pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
@@ -208,7 +219,7 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.10.1
+        tag: v2.11.2
         pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
@@ -223,7 +234,7 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.10.1
+        tag: v2.11.2
         pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
@@ -238,7 +249,7 @@ glassflow-operator:
     dedup:
       image:
         repository: glassflow-etl-dedup
-        tag: v2.10.1
+        tag: v2.11.2
         pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
