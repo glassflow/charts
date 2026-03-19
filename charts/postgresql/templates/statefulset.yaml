@@ -140,7 +140,7 @@ spec:
     - metadata:
         name: pgdata
         labels:
-          {{- include "postgresql.labels" . | nindent 10 }}
+          {{- include "postgresql.pvcLabels" . | nindent 10 }}
       spec:
         accessModes:
           {{- toYaml .Values.persistence.accessModes | nindent 10 }}
