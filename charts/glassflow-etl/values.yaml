@@ -14,19 +14,20 @@ global:
       enabled: true
     logs:
       enabled: false
-      exporter:
-        # Configure the OTLP gRPC exporter. Leave empty ({}) to disable.
-        # Example:
-        #   endpoint: "my-collector:4317"
-        #   tls:
-        #     insecure: true
-        otlp: {}
-        # Configure the OTLP HTTP exporter. Leave empty ({}) to disable.
-        # Example:
-        #   endpoint: "http://my-collector:4318"
-        #   headers:
-        #     Authorization: "Bearer <token>"
-        otlphttp: {}
+      # Exporters map: keys are OTel exporter names, values are their config.
+      # At least one exporter must be configured when logs.enabled=true.
+      # Any OTel-supported exporter type is accepted (otlp, otlphttp, etc.).
+      # Example:
+      #   exporter:
+      #     otlp:
+      #       endpoint: "my-collector:4317"
+      #       tls:
+      #         insecure: true
+      #     otlphttp:
+      #       endpoint: "http://my-collector:4318"
+      #       headers:
+      #         Authorization: "Bearer <token>"
+      exporter: {}
     # OpenTelemetry collector resources (used when metrics or logs are enabled)
     otelCollector:
       resources:
