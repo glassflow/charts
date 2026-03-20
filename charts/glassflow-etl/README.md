@@ -86,7 +86,7 @@ A Helm chart for Kubernetes
 | global.nats.stream.maxAge | string | `"24h"` |  |
 | global.nats.stream.maxBytes | string | `"10GB"` |  |
 | global.observability.logs.enabled | bool | `false` |  |
-| global.observability.logs.exporter.otlp | object | `{}` |  |
+| global.observability.logs.exporter | object | `{}` | Map of OTel exporter name to config (e.g. `otlp`, `otlphttp`). At least one entry required when `logs.enabled=true`. |
 | global.observability.metrics.enabled | bool | `true` |  |
 | global.pipelines.namespace.auto | bool | `true` |  |
 | global.pipelines.namespace.create | bool | `true` |  |
