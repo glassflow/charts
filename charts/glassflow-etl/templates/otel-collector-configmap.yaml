@@ -42,7 +42,9 @@ data:
 
     exporters:
 {{- if .Values.global.observability.logs.enabled }}
-      otlp: {{ toYaml .Values.global.observability.logs.exporter.otlp | nindent 8 }}
+  {{- range $name, $cfg := .Values.global.observability.logs.exporter }}
+      {{ $name }}: {{ toYaml $cfg | nindent 8 }}
+  {{- end }}
 {{- end }}
 {{- if .Values.global.observability.metrics.enabled }}
       prometheus:
@@ -63,7 +65,11 @@ data:
         logs:
           receivers: [otlp]
           processors: [batch, resource]
-          exporters: [otlp]
+          {{- $logExporters := keys .Values.global.observability.logs.exporter | sortAlpha -}}
+          {{- if eq (len $logExporters) 0 -}}
+          {{- fail "logs.enabled=true requires at least one exporter configured under global.observability.logs.exporter" -}}
+          {{- end }}
+          exporters: [{{ join ", " $logExporters }}]
 {{- end }}
 {{- if .Values.global.observability.metrics.enabled }}
         metrics:
