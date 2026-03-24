@@ -38,7 +38,7 @@ global:
           cpu: 500m
           memory: 512Mi
   notifications: # configure slack / email channel details in notificationService section below
-    enabled: false
+    enabled: true
   nats:
     # NATS address for the operator to connect to
     # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222 if not specified
