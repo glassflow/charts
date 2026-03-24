@@ -25,6 +25,8 @@ global:
         limits:
           cpu: 500m
           memory: 512Mi
+  notifications: # configure slack / email channel details in notificationService below
+    enabled: false
   nats:
     # NATS address for the operator to connect to
     # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222 if not specified
@@ -516,8 +518,6 @@ autoscaling:
 # =============================================================================
 # Notification service for sending Slack and Email notifications
 notificationService:
-  # Enable or disable the notification service
-  enabled: false
   replicas: 1
   image:
     repository: glassflow-notifier
