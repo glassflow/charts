@@ -57,7 +57,7 @@ global:
 
   usageStats:
     enabled: true
-    # Optional: provide an installation ID    
+    # Optional: provide an installation ID
     installationId: ""
 
   # Only used when postgresql.enabled is false
