@@ -36,7 +36,11 @@ spec:
               
               apk add --no-cache jq uuidgen >/dev/null 2>&1
               
+              {{- if .Values.global.usageStats.installationId }}
+              INSTALLATION_ID="{{ .Values.global.usageStats.installationId }}"
+              {{- else }}
               INSTALLATION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+              {{- end }}
               USAGE_STATS_ENDPOINT="https://tracking.glassflow.dev/api/v1"
               USAGE_STATS_USERNAME="5PR3vzYGGlYttkBXRTYuzw=="
               USAGE_STATS_PASSWORD="5tJcYQNR85KKyOwpeIFVdGqGIOgFwxmWEHu0t7WxBbo="
