@@ -12,6 +12,10 @@ data:
   NEXT_PUBLIC_API_URL: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:8081"
   NEXT_PUBLIC_IN_DOCKER: "false"
   NEXT_PUBLIC_ANALYTICS_ENABLED: "{{ .Values.global.usageStats.enabled }}"
+  NEXT_PUBLIC_NOTIFICATIONS_ENABLED: "{{ .Values.global.notifications.enabled }}"
+  {{- if .Values.global.notifications.enabled }}
+  NEXT_PUBLIC_NOTIFICATIONS_URL: "http://{{ .Release.Name }}-notifier.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.notificationService.service.port }}"
+  {{- end }}
   NEXT_PUBLIC_AUTH0_ENABLED: "{{ .Values.ui.auth0.enabled }}"
   AUTH0_ENABLED: "{{ .Values.ui.auth0.enabled }}"
   NEXT_PUBLIC_OTEL_LOGS_ENABLED: "{{ .Values.global.observability.logs.enabled }}"

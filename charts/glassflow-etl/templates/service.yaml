@@ -36,7 +36,7 @@ spec:
     {{- include "glassflow-etl.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: api
 ---
-{{- if .Values.notificationService.enabled }}
+{{- if .Values.global.notifications.enabled }}
 apiVersion: v1
 kind: Service
 metadata:

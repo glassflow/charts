@@ -1,4 +1,4 @@
-{{- if .Values.notificationService.enabled }}
+{{- if .Values.global.notifications.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
