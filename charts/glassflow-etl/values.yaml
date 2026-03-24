@@ -14,15 +14,36 @@ global:
       enabled: true
     logs:
       enabled: false
-      exporter:
-        otlp: {}
+      # Exporters map: keys are OTel exporter names, values are their config.
+      # At least one exporter must be configured when logs.enabled=true.
+      # Any OTel-supported exporter type is accepted (otlp, otlphttp, etc.).
+      # Example:
+      #   exporter:
+      #     otlp:
+      #       endpoint: "my-collector:4317"
+      #       tls:
+      #         insecure: true
+      #     otlphttp:
+      #       endpoint: "http://my-collector:4318"
+      #       headers:
+      #         Authorization: "Bearer <token>"
+      exporter: {}
+    # OpenTelemetry collector resources (used when metrics or logs are enabled)
+    otelCollector:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
   nats:
     # NATS address for the operator to connect to
     # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222 if not specified
     # address: ""
     stream:
       maxAge: 24h
-      maxBytes: 10GB
+      maxBytes: 0
 
   # Pipelines namespace configuration
   pipelines:
@@ -36,10 +57,26 @@ global:
 
   usageStats:
     enabled: true
-  # PostgreSQL connection URL
+
   # Only used when postgresql.enabled is false
-  # Format: postgresql://username:password@host:port/database
-  # postgres_connection_url: ""
+  postgres:
+    # PostgreSQL connection URL
+    # Format: postgresql://username:password@host:port/database
+    connection_url: ""
+    # Alternatively, source the connection URL from a Kubernetes secret
+    secret:
+      name: ""
+      key: "connection_url"
+
+  # Encryption configuration for connection credentials
+  encryption:
+    # Enable credential encryption (encrypts Kafka and ClickHouse connection details)
+    enabled: false
+    # Provide your own Kubernetes secret (required when enabled=true)
+    # The chart does not create this secret.
+    existingSecret:
+      name: ""  # e.g., "glassflow-encryption-key"
+      key: "encryption-key"  # Key name in secret
 # =============================================================================
 # API COMPONENT CONFIGURATION
 # =============================================================================
@@ -49,7 +86,7 @@ api:
   logLevel: "info"
   image:
     repository: glassflow-etl-be
-    tag: v2.5.1
+    tag: v2.11.2
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -80,10 +117,11 @@ api:
 # =============================================================================
 # Frontend UI service configuration for the GlassFlow ETL application
 ui:
+  enabled: true
   replicas: 1
   image:
     repository: glassflow-etl-fe
-    tag: v2.5.1
+    tag: v2.11.2
     pullPolicy: IfNotPresent
   logLevel: "info"
   resources:
@@ -157,9 +195,12 @@ glassflow-operator:
   controllerManager:
     replicas: 1
     manager:
+      # Maximum duration a reconcile operation can run before timing out.
+      # Must be a valid Go duration string (e.g. 15m, 1h).
+      reconcileTimeout: 15m
       image:
         repository: glassflow-etl-k8s-operator
-        tag: v1.4.2
+        tag: v2.0.1
         pullPolicy: IfNotPresent
       resources:
         limits:
@@ -175,7 +216,8 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v2.5.1
+        tag: v2.11.2
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -189,7 +231,8 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v2.5.1
+        tag: v2.11.2
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -203,7 +246,8 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v2.5.1
+        tag: v2.11.2
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -217,7 +261,8 @@ glassflow-operator:
     dedup:
       image:
         repository: glassflow-etl-dedup
-        tag: v2.5.1
+        tag: v2.11.2
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -263,7 +308,7 @@ natsPrometheusExporter:
 # =============================================================================
 # PostgreSQL database configuration
 # When enabled, the postgresql dependency chart will be deployed
-# When disabled, use global.postgres_connection_url to connect to an external PostgreSQL instance
+# When disabled, use global.postgres.connection_url or global.postgres.secret.name to connect to an external PostgreSQL instance
 postgresql:
   # Enable or disable PostgreSQL deployment
   # Set to false if you want to use an external PostgreSQL instance
@@ -279,6 +324,9 @@ postgresql:
   auth:
     enabled: true
     database: "glassflow"
+    # PostgreSQL SSL mode for connection URL
+    # Valid values: disable, allow, prefer, require, verify-ca, verify-full
+    sslmode: "disable"
     # Please update this for production deployments
     username: "glassflow"
     password: "glassflow123"
@@ -299,6 +347,7 @@ postgresql:
   persistence:
     enabled: true
     size: 10Gi
+    storageClass: ""
   resources:
     requests:
       memory: "512Mi"
@@ -332,14 +381,15 @@ nats:
           enabled: true
           size: 100Gi
           storageClassName: ""
-
-    resources:
-      requests:
-        memory: "4Gi"
-        cpu: "2000m"
-      limits:
-        memory: "4Gi"
-        cpu: "2000m"
+  container:
+    merge:
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2000m"
+        limits:
+          memory: "4Gi"
+          cpu: "2000m"
 
 # =============================================================================
 # INGRESS CONFIGURATION

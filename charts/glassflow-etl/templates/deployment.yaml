@@ -1,3 +1,4 @@
+{{- if .Values.ui.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -90,6 +91,7 @@ spec:
             timeoutSeconds: 2
             failureThreshold: 2
         {{- end }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -133,8 +135,48 @@ spec:
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
       {{- end }}
-      {{- if or .Values.postgresql.enabled true }}
       initContainers:
+        {{- if .Values.global.usageStats.enabled }}
+        - name: wait-for-usage-stats-secret
+          image: "alpine/curl:latest"
+          command:
+            - sh
+            - -c
+            - |
+              apk add --no-cache jq >/dev/null 2>&1
+
+              SECRET_NAME="{{ .Release.Name }}-usage-stats-config"
+              NAMESPACE="{{ .Release.Namespace }}"
+              KUBE_API="https://kubernetes.default.svc"
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+
+              echo "Waiting for usage stats secret to be ready with installation_id..."
+              MAX_WAIT=300  # 5 minutes
+              ELAPSED=0
+              INTERVAL=2
+
+              while [ $ELAPSED -lt $MAX_WAIT ]; do
+                SECRET_JSON=$(curl -sS --cacert "$CA_CERT" \
+                  -H "Authorization: Bearer $TOKEN" \
+                  "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
+
+                INSTALLATION_ID=$(echo "$SECRET_JSON" | jq -r '.data.installation_id // empty' | base64 -d 2>/dev/null || echo "")
+
+                if [ -n "$INSTALLATION_ID" ] && [ "$INSTALLATION_ID" != "null" ] && [ "$INSTALLATION_ID" != "" ]; then
+                  echo "Usage stats secret is ready with installation_id: ${INSTALLATION_ID:0:8}..."
+                  exit 0
+                fi
+
+                echo "Waiting for installation_id in secret... (${ELAPSED}s/${MAX_WAIT}s)"
+                sleep $INTERVAL
+                ELAPSED=$((ELAPSED + INTERVAL))
+              done
+
+              echo "WARNING: Timeout waiting for usage stats secret installation_id after ${MAX_WAIT}s"
+              echo "Continuing without usage stats secret - usage stats will be disabled"
+              exit 0
+        {{- end }}
         {{- if .Values.postgresql.enabled }}
         - name: wait-for-postgres
           image: "busybox:1.35"
@@ -175,125 +217,35 @@ spec:
                 sleep 2
               done
               echo "NATS is ready!"
-      {{- end }}
-      {{- if or .Values.postgresql.enabled true }}
-        - name: wait-for-migration
-          image: "alpine/curl:latest"
-          command:
-            - sh
-            - -c
-            - |
-              # Install jq for JSON parsing
-              apk add --no-cache jq >/dev/null 2>&1
-
-              JOB_NAME="{{ include "glassflow-etl.fullname" . }}-migration-{{ .Release.Revision }}"
-              NAMESPACE="{{ .Release.Namespace }}"
-              KUBE_API="https://kubernetes.default.svc"
-              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-              CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-
-              echo "=== Waiting for migration job to complete ==="
-              echo "Job name: $JOB_NAME"
-              echo "Namespace: $NAMESPACE"
-
-              # Function to check if job exists via Kubernetes API
-              check_job_exists() {
-                HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --cacert "$CA_CERT" \
-                  -H "Authorization: Bearer $TOKEN" \
-                  "$KUBE_API/apis/batch/v1/namespaces/$NAMESPACE/jobs/$JOB_NAME" 2>/dev/null)
-                [ "$HTTP_CODE" = "200" ]
-              }
-
-              # Function to get full job object
-              get_job_json() {
-                curl -sS --cacert "$CA_CERT" \
-                  -H "Authorization: Bearer $TOKEN" \
-                  "$KUBE_API/apis/batch/v1/namespaces/$NAMESPACE/jobs/$JOB_NAME" 2>/dev/null
-              }
-
-              # Step 1: Wait for job to be created (Helm hook might create it after pod starts)
-              echo "Step 1: Waiting for migration job to exist..."
-              MAX_WAIT_FOR_JOB=300  # 5 minutes
-              ELAPSED=0
-              while ! check_job_exists; do
-                if [ $ELAPSED -ge $MAX_WAIT_FOR_JOB ]; then
-                  echo "ERROR: Migration job '$JOB_NAME' not found after ${MAX_WAIT_FOR_JOB}s"
-                  echo "This might mean the Helm hook hasn't created it yet, or there's a naming mismatch."
-                  exit 1
-                fi
-                echo "  Job not found yet, waiting... (${ELAPSED}s/${MAX_WAIT_FOR_JOB}s)"
-                sleep 5
-                ELAPSED=$((ELAPSED + 5))
-              done
-
-              echo "✓ Migration job found: $JOB_NAME"
-
-              # Step 2: Wait for job to complete
-              echo "Step 2: Waiting for migration job to complete..."
-              echo "  This may take several minutes depending on migration complexity..."
-
-              MAX_WAIT=1800  # 30 minutes
-              ELAPSED=0
-              while [ $ELAPSED -lt $MAX_WAIT ]; do
-                # Check if job still exists (should exist unless deleted manually or TTL expired)
-                if ! check_job_exists; then
-                  echo "⚠ Migration job no longer exists"
-                  echo "  This could mean the job was deleted manually or TTL expired (1 hour)."
-                  echo "  If migrations completed, proceeding with API startup..."
-                  echo "  WARNING: This may indicate the job failed or was interrupted."
-                  exit 0
-                fi
-
-                # Get job JSON
-                JOB_JSON=$(get_job_json)
-                if [ -z "$JOB_JSON" ] || ! echo "$JOB_JSON" | jq . >/dev/null 2>&1; then
-                  echo "  Waiting for job status to be available..."
-                  sleep 5
-                  ELAPSED=$((ELAPSED + 5))
-                  continue
-                fi
-
-                # Extract status fields safely
-                SUCCEEDED=$(echo "$JOB_JSON" | jq -r '.status.succeeded // 0' 2>/dev/null || echo "0")
-                FAILED=$(echo "$JOB_JSON" | jq -r '.status.failed // 0' 2>/dev/null || echo "0")
-                COMPLETION_TIME=$(echo "$JOB_JSON" | jq -r '.status.completionTime // empty' 2>/dev/null || echo "")
-
-                # Check conditions safely
-                COMPLETE_COND=$(echo "$JOB_JSON" | jq -r '.status.conditions[]? | select(.type=="Complete") | .status // empty' 2>/dev/null || echo "")
-                FAILED_COND=$(echo "$JOB_JSON" | jq -r '.status.conditions[]? | select(.type=="Failed") | .status // empty' 2>/dev/null || echo "")
-
-                # Success conditions
-                if [ "$SUCCEEDED" = "1" ] || [ -n "$COMPLETION_TIME" ] || [ "$COMPLETE_COND" = "True" ]; then
-                  echo "✓ Migration job completed successfully!"
-                  exit 0
-                fi
-
-                # Failure conditions
-                if [ "$FAILED_COND" = "True" ] || ([ "$FAILED" != "0" ] && [ -n "$FAILED" ] && [ "$FAILED" != "null" ]); then
-                  echo "✗ ERROR: Migration job failed!"
-                  echo "Job status:"
-                  echo "$JOB_JSON" | jq '.status' 2>/dev/null || echo "$JOB_JSON"
-                  exit 1
-                fi
-
-                # Still running
-                if [ $((ELAPSED % 30)) -eq 0 ]; then
-                  echo "  Job still running... (${ELAPSED}s/${MAX_WAIT}s)"
-                fi
-
-                sleep 5
-                ELAPSED=$((ELAPSED + 5))
-              done
-
-              echo "✗ ERROR: Migration job did not complete within timeout (30 minutes)"
-              echo "Final job status:"
-              JOB_JSON=$(get_job_json)
-              if [ -n "$JOB_JSON" ] && echo "$JOB_JSON" | jq . >/dev/null 2>&1; then
-                echo "$JOB_JSON" | jq '.status' 2>/dev/null || echo "$JOB_JSON"
-              else
-                echo "Unable to retrieve job status"
-              fi
-              exit 1
+        {{- if or .Values.postgresql.enabled .Values.global.postgres.connection_url .Values.global.postgres.secret.name }}
+        - name: run-migration
+          image: "{{ .Values.global.imageRegistry | default "" }}glassflow-etl-migration:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          env:
+            {{- if .Values.postgresql.enabled }}
+            - name: POSTGRES_CONNECTION_URL
+              valueFrom:
+                secretKeyRef:
+                  name: glassflow-postgresql
+                  key: connection-url
+            {{- else if .Values.global.postgres.connection_url }}
+            - name: POSTGRES_CONNECTION_URL
+              value: {{ .Values.global.postgres.connection_url | quote }}
+            {{- else if .Values.global.postgres.secret.name }}
+            - name: POSTGRES_CONNECTION_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.postgres.secret.name }}
+                  key: {{ .Values.global.postgres.secret.key }}
+            {{- end }}
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
       {{- end }}
       containers:
         - name: api
@@ -313,15 +265,57 @@ spec:
                 secretKeyRef:
                   name: glassflow-postgresql
                   key: connection-url
-            {{- else }}
+            {{- else if .Values.global.postgres.connection_url }}
             - name: GLASSFLOW_DATABASE_URL
-              value: {{ .Values.global.postgres_connection_url | quote }}
+              value: {{ .Values.global.postgres.connection_url | quote }}
+            {{- else if .Values.global.postgres.secret.name }}
+            - name: GLASSFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.postgres.secret.name }}
+                  key: {{ .Values.global.postgres.secret.key }}
+            {{- end }}
+            {{- if .Values.global.usageStats.enabled }}
+            - name: GLASSFLOW_USAGE_STATS_ENABLED
+              value: "true"
+            - name: GLASSFLOW_USAGE_STATS_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-usage-stats-config
+                  key: usage_stats_endpoint
+                  optional: true
+            - name: GLASSFLOW_USAGE_STATS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-usage-stats-config
+                  key: usage_stats_username
+                  optional: true
+            - name: GLASSFLOW_USAGE_STATS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-usage-stats-config
+                  key: usage_stats_password
+                  optional: true
+            - name: GLASSFLOW_USAGE_STATS_INSTALLATION_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-usage-stats-config
+                  key: installation_id
+                  optional: true
             {{- end }}
             {{- if .Values.api.env }}
             {{- range .Values.api.env }}
             - name: {{ .name | quote }}
               value: {{ .value | quote }}
             {{- end }}
+            {{- end }}
+          volumeMounts:
+            - name: logs
+              mountPath: /tmp/logs/glassflow
+            {{- if and .Values.global.encryption.enabled .Values.global.encryption.existingSecret.name }}
+            - name: encryption-key
+              mountPath: /etc/glassflow/secrets
+              readOnly: true
             {{- end }}
           {{- with .Values.api.livenessProbe }}
           livenessProbe:
@@ -332,11 +326,17 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
-          volumeMounts:
-            - name: logs
-              mountPath: /tmp/logs/glassflow
       serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
       securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
       volumes:
         - name: logs
           emptyDir: {}
+        {{- if and .Values.global.encryption.enabled .Values.global.encryption.existingSecret.name }}
+        - name: encryption-key
+          secret:
+            secretName: {{ .Values.global.encryption.existingSecret.name }}
+            defaultMode: 0444
+            items:
+              - key: {{ .Values.global.encryption.existingSecret.key | default "encryption-key" }}
+                path: encryption-key
+        {{- end }}
