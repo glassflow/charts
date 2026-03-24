@@ -37,7 +37,7 @@ global:
         limits:
           cpu: 500m
           memory: 512Mi
-  notifications: # configure slack / email channel details in notificationService below
+  notifications: # configure slack / email channel details in notificationService section below
     enabled: false
   nats:
     # NATS address for the operator to connect to
