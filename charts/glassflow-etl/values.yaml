@@ -37,6 +37,8 @@ global:
         limits:
           cpu: 500m
           memory: 512Mi
+  notifications:  # configure slack / email channel details in notificationService section below
+    enabled: false
   nats:
     # NATS address for the operator to connect to
     # Defaults to {{ .Release.Name }}-nats.{{ .Release.Namespace }}.svc.cluster.local:4222 if not specified
@@ -57,6 +59,8 @@ global:
 
   usageStats:
     enabled: true
+    # Optional: provide an installation ID
+    installationId: ""
 
   # Only used when postgresql.enabled is false
   postgres:
@@ -200,7 +204,7 @@ glassflow-operator:
       reconcileTimeout: 15m
       image:
         repository: glassflow-etl-k8s-operator
-        tag: v2.0.1
+        tag: v2.1.0
         pullPolicy: IfNotPresent
       resources:
         limits:
@@ -522,3 +526,65 @@ autoscaling:
   # Target memory utilization percentage for scaling (commented out)
   # Uncomment and set a value to enable memory-based scaling
   # targetMemoryUtilizationPercentage: 80
+
+# =============================================================================
+# NOTIFICATION SERVICE COMPONENT CONFIGURATION
+# =============================================================================
+# Notification service for sending Slack and Email notifications
+notificationService:
+  replicas: 1
+  image:
+    repository: glassflow-notifier
+    tag: v1.0.1
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+    limits:
+      memory: "200Mi"
+      cpu: "250m"
+
+  service:
+    type: ClusterIP
+    port: 8082
+    targetPort: 8080
+
+  # Slack Configuration
+  slack:
+    enabled: "false"  # Set to true and add webhook URL
+    webhookUrl: ""  # Add your Slack webhook URL here
+    defaultChannel: "#notifications"
+
+  # Email Configuration
+  email:
+    enabled: "false"  # Set to true and add SMTP details
+    smtpHost: ""  # Add your SMTP host
+    smtpPort: 587
+    smtpUsername: ""  # Add your SMTP username
+    smtpPassword: ""  # Add your SMTP password
+    fromAddress: ""  # Add sender email address
+    toAddress: ""  # Add recipient email address
+
+  # Environment variables for the notification service
+  # Example:
+  # env:
+  #   - name: CUSTOM_VAR
+  #     value: "custom_value"
+  env: []
+
+  # Liveness probe configuration (optional)
+  # livenessProbe:
+  #   httpGet:
+  #     path: /health
+  #     port: 8080
+  #   initialDelaySeconds: 30
+  #   periodSeconds: 10
+
+  # Readiness probe configuration (optional)
+  # readinessProbe:
+  #   httpGet:
+  #     path: /ready
+  #     port: 8080
+  #   initialDelaySeconds: 5
+  #   periodSeconds: 5
