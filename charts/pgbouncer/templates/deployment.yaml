@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pgbouncer.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "pgbouncer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pgbouncer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pgbouncer.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: pgbouncer
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: pgbouncer
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: pgbouncer
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: pgbouncer
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          env:
+            # Backend PostgreSQL connection details
+            - name: POSTGRESQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName }}
+                  key: {{ .Values.backend.secretKeys.host }}
+            - name: POSTGRESQL_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName }}
+                  key: {{ .Values.backend.secretKeys.port }}
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName }}
+                  key: {{ .Values.backend.secretKeys.database }}
+            - name: POSTGRESQL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName }}
+                  key: {{ .Values.backend.secretKeys.username }}
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName }}
+                  key: {{ .Values.backend.secretKeys.password }}
+            # PGBouncer listen port
+            - name: PGBOUNCER_PORT
+              value: {{ .Values.service.targetPort | quote }}
+            # Pool configuration
+            - name: PGBOUNCER_POOL_MODE
+              value: {{ .Values.poolMode | quote }}
+            - name: PGBOUNCER_MAX_CLIENT_CONN
+              value: {{ .Values.maxClientConn | quote }}
+            - name: PGBOUNCER_DEFAULT_POOL_SIZE
+              value: {{ .Values.defaultPoolSize | quote }}
+            - name: PGBOUNCER_MIN_POOL_SIZE
+              value: {{ .Values.minPoolSize | quote }}
+            - name: PGBOUNCER_RESERVE_POOL_SIZE
+              value: {{ .Values.reservePoolSize | quote }}
+            - name: PGBOUNCER_SERVER_IDLE_TIMEOUT
+              value: {{ .Values.serverIdleTimeout | quote }}
+            - name: PGBOUNCER_CLIENT_IDLE_TIMEOUT
+              value: {{ .Values.clientIdleTimeout | quote }}
+            - name: PGBOUNCER_IGNORE_STARTUP_PARAMETERS
+              value: {{ .Values.ignoreStartupParameters | quote }}
+            {{- if .Values.serverResetQuery }}
+            - name: PGBOUNCER_SERVER_RESET_QUERY
+              value: {{ .Values.serverResetQuery | quote }}
+            {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

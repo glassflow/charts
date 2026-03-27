@@ -9,6 +9,11 @@
 global:
   # Global storage class - if set, will be used for persistent volumes
   storageClass: ""
+  pgbouncer:
+    # When true, connection-url in the glassflow-postgresql secret points to PGBouncer
+    # instead of PostgreSQL directly. This is set automatically by the glassflow-etl chart
+    # when pgbouncer.enabled=true and should not be set manually.
+    enabled: false
 
 # =============================================================================
 # IMAGE CONFIGURATION

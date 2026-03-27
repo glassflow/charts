@@ -227,7 +227,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: glassflow-postgresql
+                  {{- if .Values.global.pgbouncer.enabled }}
+                  # When PGBouncer is enabled, migrations must connect directly to PostgreSQL
+                  key: direct-connection-url
+                  {{- else }}
                   key: connection-url
+                  {{- end }}
             {{- else if .Values.global.postgres.connection_url }}
             - name: POSTGRES_CONNECTION_URL
               value: {{ .Values.global.postgres.connection_url | quote }}

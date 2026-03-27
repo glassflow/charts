@@ -1,0 +1,94 @@
+# Default values for pgbouncer.
+
+# =============================================================================
+# BACKEND POSTGRESQL CONNECTION
+# =============================================================================
+# PGBouncer reads backend connection details from a Kubernetes secret.
+# When used as a subchart of glassflow-etl with postgresql.enabled=true,
+# this defaults to reading from the glassflow-postgresql secret.
+backend:
+  # Name of the secret containing backend PostgreSQL connection details
+  secretName: "glassflow-postgresql"
+  # Keys within the secret
+  secretKeys:
+    host: "host"
+    port: "port"
+    database: "database"
+    username: "username"
+    password: "password"
+
+# =============================================================================
+# IMAGE CONFIGURATION
+# =============================================================================
+image:
+  repository: bitnami/pgbouncer
+  tag: "1.23.1"
+  pullPolicy: IfNotPresent
+
+# =============================================================================
+# PGBOUNCER POOL CONFIGURATION
+# =============================================================================
+# Pool mode controls how server connections are reused:
+#   transaction - connection returned to pool after each transaction (most efficient,
+#                 requires simple query protocol — glassflow-api uses QueryExecModeSimpleProtocol)
+#   session     - connection held for the entire client session (compatible with
+#                 prepared statements, but less efficient)
+#   statement   - connection returned after each statement (not recommended)
+poolMode: "transaction"
+
+# Maximum number of client connections allowed
+maxClientConn: 100
+
+# How many server connections to allow per user/database pair
+defaultPoolSize: 20
+
+# Minimum number of server connections kept open
+minPoolSize: 0
+
+# Extra server connections available for use when pool is exhausted
+reservePoolSize: 5
+
+# Seconds a server connection can be idle before being closed (0 = disable)
+serverIdleTimeout: 600
+
+# Seconds a client connection can be idle before being closed (0 = disable)
+clientIdleTimeout: 0
+
+# Startup parameters to silently ignore (pgx sends extra_float_digits by default)
+ignoreStartupParameters: "extra_float_digits"
+
+# Server reset query run when a server connection is returned to the pool.
+# Leave empty for transaction mode. Use "DISCARD ALL" for session mode.
+serverResetQuery: ""
+
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+service:
+  type: ClusterIP
+  port: 5432
+  targetPort: 5432
+
+# =============================================================================
+# RESOURCE CONFIGURATION
+# =============================================================================
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "50m"
+  limits:
+    memory: "128Mi"
+    cpu: "200m"
+
+# =============================================================================
+# POD CONFIGURATION
+# =============================================================================
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podSecurityContext: {}
+securityContext: {}
+
+replicaCount: 1
