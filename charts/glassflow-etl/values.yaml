@@ -411,7 +411,7 @@ pgbouncer:
   poolMode: "transaction"
 
   # Maximum number of client connections PGBouncer will accept
-  maxClientConn: 100
+  maxClientConn: 1000
 
   # Number of server connections per user/database pair
   defaultPoolSize: 20

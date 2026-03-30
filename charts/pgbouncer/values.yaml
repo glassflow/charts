@@ -42,7 +42,7 @@ databaseAlias: ""
 poolMode: "transaction"
 
 # Maximum number of client connections allowed
-maxClientConn: 100
+maxClientConn: 1000
 
 # How many server connections to allow per user/database pair
 defaultPoolSize: 20
