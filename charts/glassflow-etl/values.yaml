@@ -71,10 +71,18 @@ global:
     # For external PostgreSQL, manage your own connection pooler and point
     # connection_url to it directly.
     connection_url: ""
+    # Optional direct PostgreSQL URL for migrations (DDL).
+    # Recommended when connection_url points to a pooler such as PgBouncer.
+    # If empty, migration falls back to connection_url.
+    direct_connection_url: ""
     # Alternatively, source the connection URL from a Kubernetes secret
     secret:
       name: ""
+      # App/runtime connection URL key
       key: "connection_url"
+      # Optional direct migration URL key
+      # If empty, migration falls back to "key".
+      direct_key: ""
 
   # PGBouncer toggle — this is the single flag to enable/disable PGBouncer.
   # Setting this to true:
