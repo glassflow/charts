@@ -393,8 +393,12 @@ postgresql:
 #
 # Existing users are not affected: defaults to disabled (global.pgbouncer.enabled=false).
 pgbouncer:
+  # Database alias exposed by pgbouncer to clients.
+  # Must match the database name used in glassflow-postgresql connection-url.
+  databaseAlias: "glassflow"
+
   image:
-    repository: bitnami/pgbouncer
+    repository: bitnamilegacy/pgbouncer
     tag: "1.23.1"
     pullPolicy: IfNotPresent
 

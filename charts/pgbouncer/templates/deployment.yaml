@@ -77,6 +77,10 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.backend.secretName }}
                   key: {{ .Values.backend.secretKeys.database }}
+            {{- if .Values.databaseAlias }}
+            - name: PGBOUNCER_DATABASE
+              value: {{ .Values.databaseAlias | quote }}
+            {{- end }}
             - name: POSTGRESQL_USERNAME
               valueFrom:
                 secretKeyRef:

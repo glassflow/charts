@@ -21,13 +21,18 @@ backend:
 # IMAGE CONFIGURATION
 # =============================================================================
 image:
-  repository: bitnami/pgbouncer
+  repository: bitnamilegacy/pgbouncer
   tag: "1.23.1"
   pullPolicy: IfNotPresent
 
 # =============================================================================
 # PGBOUNCER POOL CONFIGURATION
 # =============================================================================
+# Database alias clients must use when connecting to pgbouncer.
+# This becomes the key under [databases] in pgbouncer.ini.
+# If empty, pgbouncer default alias ("postgres") is used.
+databaseAlias: ""
+
 # Pool mode controls how server connections are reused:
 #   transaction - connection returned to pool after each transaction (most efficient,
 #                 requires simple query protocol — glassflow-api uses QueryExecModeSimpleProtocol)
