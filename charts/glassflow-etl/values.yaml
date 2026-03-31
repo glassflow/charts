@@ -12,6 +12,21 @@ global:
   observability:
     metrics:
       enabled: true
+      # Exporters map: keys are OTel exporter names, values are their config.
+      # At least one exporter must be configured when metrics.enabled=true.
+      # Any OTel-supported exporter type is accepted (prometheus, otlp, otlphttp, etc.).
+      # The default exposes a Prometheus scrape endpoint on port 9090.
+      # Example (replace prometheus with an OTLP push exporter):
+      #   exporter:
+      #     otlp:
+      #       endpoint: "my-collector:4317"
+      #       tls:
+      #         insecure: true
+      exporter:
+        prometheus:
+          endpoint: "0.0.0.0:9090"
+          send_timestamps: true
+          enable_open_metrics: true
     logs:
       enabled: false
       # Exporters map: keys are OTel exporter names, values are their config.

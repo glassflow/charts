@@ -14,10 +14,11 @@ spec:
   - name: otlp-http
     port: 4318
     targetPort: 4318
-{{- if .Values.global.observability.metrics.enabled }}
+{{- if and .Values.global.observability.metrics.enabled (hasKey (default dict .Values.global.observability.metrics.exporter) "prometheus") }}
+  {{- $prometheusPort := .Values.global.observability.metrics.exporter.prometheus.endpoint | splitList ":" | last | int }}
   - name: prometheus
-    port: 9090
-    targetPort: 9090
+    port: {{ $prometheusPort }}
+    targetPort: {{ $prometheusPort }}
 {{- end }}
   selector:
     app: {{ .Release.Name }}-otel-collector

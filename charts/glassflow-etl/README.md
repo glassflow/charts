@@ -88,6 +88,7 @@ A Helm chart for Kubernetes
 | global.observability.logs.enabled | bool | `false` |  |
 | global.observability.logs.exporter | object | `{}` | Map of OTel exporter name to config (e.g. `otlp`, `otlphttp`). At least one entry required when `logs.enabled=true`. |
 | global.observability.metrics.enabled | bool | `true` |  |
+| global.observability.metrics.exporter | object | `{"prometheus": {"endpoint": "0.0.0.0:9090", "send_timestamps": true, "enable_open_metrics": true}}` | Map of OTel exporter name to config. Defaults to a Prometheus scrape endpoint on port 9090. At least one entry required when `metrics.enabled=true`. Replace or extend with any OTel-supported exporter (e.g. `otlp`, `otlphttp`) to push metrics to an external backend instead. |
 | global.pipelines.namespace.auto | bool | `true` |  |
 | global.pipelines.namespace.create | bool | `true` |  |
 | global.pipelines.namespace.name | string | `"glassflow-pipelines"` |  |
