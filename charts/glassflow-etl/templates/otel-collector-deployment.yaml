@@ -29,9 +29,8 @@ spec:
           name: otlp-grpc
         - containerPort: 4318
           name: otlp-http
-{{- if and .Values.global.observability.metrics.enabled (hasKey (default dict .Values.global.observability.metrics.exporter) "prometheus") }}
-        {{- $prometheusPort := .Values.global.observability.metrics.exporter.prometheus.endpoint | splitList ":" | last | int }}
-        - containerPort: {{ $prometheusPort }}
+{{- if .Values.global.observability.metrics.enabled }}
+        - containerPort: 9090
           name: prometheus
 {{- end }}
         - containerPort: 13133

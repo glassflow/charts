@@ -39,16 +39,31 @@ data:
           - key: service.namespace
             from_attribute: service.namespace
             action: insert
+{{- if .Values.global.observability.logs.enabled }}
+  {{- range $name, $cfg := (default dict .Values.global.observability.logs.extraProcessors) }}
+      {{ $name }}: {{- toYaml $cfg | nindent 8 }}
+  {{- end }}
+{{- end }}
+{{- if .Values.global.observability.metrics.enabled }}
+  {{- range $name, $cfg := (default dict .Values.global.observability.metrics.extraProcessors) }}
+      {{ $name }}: {{- toYaml $cfg | nindent 8 }}
+  {{- end }}
+{{- end }}
 
     exporters:
 {{- if .Values.global.observability.logs.enabled }}
   {{- range $name, $cfg := .Values.global.observability.logs.exporter }}
-      {{ $name }}: {{ toYaml $cfg | nindent 8 }}
+      {{ $name }}: {{- toYaml $cfg | nindent 8 }}
   {{- end }}
 {{- end }}
 {{- if .Values.global.observability.metrics.enabled }}
-  {{- range $name, $cfg := .Values.global.observability.metrics.exporter }}
-      {{ $name }}: {{ toYaml $cfg | nindent 8 }}
+      prometheus:
+        endpoint: "0.0.0.0:9090"
+        namespace: {{ .Release.Namespace }}
+        send_timestamps: true
+        enable_open_metrics: true
+  {{- range $name, $cfg := (default dict .Values.global.observability.metrics.extraExporters) }}
+      {{ $name }}: {{- toYaml $cfg | nindent 8 }}
   {{- end }}
 {{- end }}
         
@@ -64,19 +79,18 @@ data:
           {{- if eq (len $logExporters) 0 -}}
           {{- fail "logs.enabled=true requires at least one exporter configured under global.observability.logs.exporter" -}}
           {{- end }}
+          {{- $logExtraProcessors := keys (default dict .Values.global.observability.logs.extraProcessors) | sortAlpha }}
         logs:
           receivers: [otlp]
-          processors: [batch, resource]
+          processors: [{{ if $logExtraProcessors }}{{ join ", " $logExtraProcessors }}, {{ end }}resource, batch]
           exporters: [{{ join ", " $logExporters }}]
 {{- end }}
 {{- if .Values.global.observability.metrics.enabled }}
-          {{- $metricsExporters := keys .Values.global.observability.metrics.exporter | sortAlpha -}}
-          {{- if eq (len $metricsExporters) 0 -}}
-          {{- fail "metrics.enabled=true requires at least one exporter configured under global.observability.metrics.exporter" -}}
-          {{- end }}
+          {{- $metricsExtraExporters := keys (default dict .Values.global.observability.metrics.extraExporters) | sortAlpha }}
+          {{- $metricsExtraProcessors := keys (default dict .Values.global.observability.metrics.extraProcessors) | sortAlpha }}
         metrics:
           receivers: [otlp{{- if .Values.nats.enabled }}, prometheus{{- end }}]
-          processors: [batch, resource]
-          exporters: [{{ join ", " $metricsExporters }}]
+          processors: [{{ if $metricsExtraProcessors }}{{ join ", " $metricsExtraProcessors }}, {{ end }}resource, batch]
+          exporters: [prometheus{{ if $metricsExtraExporters }}, {{ join ", " $metricsExtraExporters }}{{ end }}]
 {{- end }}
 {{- end }}

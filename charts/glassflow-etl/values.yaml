@@ -12,21 +12,35 @@ global:
   observability:
     metrics:
       enabled: true
-      # Exporters map: keys are OTel exporter names, values are their config.
-      # At least one exporter must be configured when metrics.enabled=true.
-      # Any OTel-supported exporter type is accepted (prometheus, otlp, otlphttp, etc.).
-      # The default exposes a Prometheus scrape endpoint on port 9090.
-      # Example (replace prometheus with an OTLP push exporter):
-      #   exporter:
+      # Additional exporters added alongside the built-in Prometheus exporter.
+      # The Prometheus scrape endpoint (port 9090) is always enabled when metrics.enabled=true.
+      # Use this map to push metrics to additional backends (e.g. otlp, otlphttp).
+      # To disable metrics export entirely, set metrics.enabled: false.
+      # Example:
+      #   extraExporters:
       #     otlp:
       #       endpoint: "my-collector:4317"
       #       tls:
       #         insecure: true
-      exporter:
-        prometheus:
-          endpoint: "0.0.0.0:9090"
-          send_timestamps: true
-          enable_open_metrics: true
+      extraExporters: {}
+      # Extra processors added to the metrics pipeline before the default resource and batch processors.
+      # Keys are OTel processor names, values are their config.
+      # Use the name/label convention (e.g. memory_limiter/metrics) for multiple instances of the same
+      # type, and to avoid collisions when both metrics and logs extraProcessors are enabled — both
+      # blocks are rendered into the same global OTel processors section, so a shared key (e.g.
+      # memory_limiter) with different configs produces a duplicate YAML key and the last value wins
+      # silently. Unique names per signal prevent this.
+      # Example:
+      #   extraProcessors:
+      #     memory_limiter/metrics:
+      #       check_interval: 1s
+      #       limit_mib: 512
+      #     resource/metrics:
+      #       attributes:
+      #         - key: deployment.environment
+      #           value: production
+      #           action: insert
+      extraProcessors: {}
     logs:
       enabled: false
       # Exporters map: keys are OTel exporter names, values are their config.
@@ -43,6 +57,17 @@ global:
       #       headers:
       #         Authorization: "Bearer <token>"
       exporter: {}
+      # Extra processors added to the logs pipeline before the default resource and batch processors.
+      # Keys are OTel processor names, values are their config.
+      # WARNING: if both metrics and logs extraProcessors define the same key with different configs,
+      # both are rendered into the shared OTel processors section — the last definition wins silently.
+      # Use signal-scoped names (e.g. memory_limiter/logs) to avoid this.
+      # Example:
+      #   extraProcessors:
+      #     memory_limiter/logs:
+      #       check_interval: 1s
+      #       limit_mib: 256
+      extraProcessors: {}
     # OpenTelemetry collector resources (used when metrics or logs are enabled)
     otelCollector:
       resources:
