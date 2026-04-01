@@ -1,0 +1,24 @@
+{{- if .Values.sources.otlpReceiver.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-otlp-receiver
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otlp-receiver
+spec:
+  type: {{ .Values.sources.otlpReceiver.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.sources.otlpReceiver.service.grpcPort | default 4317 }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+    - port: {{ .Values.sources.otlpReceiver.service.httpPort | default 4318 }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "glassflow-etl.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: otlp-receiver
+{{- end }}

@@ -1,0 +1,16 @@
+{{- if .Values.sources.otlpReceiver.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-otlp-receiver-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otlp-receiver
+data:
+  GLASSFLOW_ROLE: "otlp-receiver"
+  GLASSFLOW_NATS_SERVER: "{{ .Values.global.nats.address | default (printf "nats://%s-nats.%s.svc.cluster.local:4222" .Release.Name .Release.Namespace) }}"
+  GLASSFLOW_OTLP_CONFIG_FETCHER_BASE_URL: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.api.service.port }}"
+  GLASSFLOW_LOG_LEVEL: "info"
+  GLASSFLOW_RUN_LOCAL: "false"
+{{- end }}
