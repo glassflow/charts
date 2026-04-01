@@ -88,6 +88,9 @@ A Helm chart for Kubernetes
 | global.observability.logs.enabled | bool | `false` |  |
 | global.observability.logs.exporter | object | `{}` | Map of OTel exporter name to config (e.g. `otlp`, `otlphttp`). At least one entry required when `logs.enabled=true`. |
 | global.observability.metrics.enabled | bool | `true` |  |
+| global.observability.metrics.extraExporters | object | `{}` | Additional exporters added to the metrics pipeline alongside the built-in Prometheus exporter. The Prometheus scrape endpoint (port 9090) is always enabled when `metrics.enabled=true`. Use this to push metrics to additional backends (e.g. `otlp`, `otlphttp`). To disable metrics export entirely, set `metrics.enabled: false`. |
+| global.observability.metrics.extraProcessors | object | `{}` | Extra processors added to the metrics pipeline before the default `resource` and `batch` processors. Keys are OTel processor names, values are their config. **When both metrics and logs `extraProcessors` are enabled, all entries are rendered into the same global OTel `processors:` block — a key used in both with different configs produces a duplicate YAML key and the last value wins silently. Use signal-scoped names (e.g. `memory_limiter/metrics`) to avoid collisions. |
+| global.observability.logs.extraProcessors | object | `{}` | Extra processors added to the logs pipeline before the default `resource` and `batch` processors. Keys are OTel processor names, values are their config. **When both metrics and logs `extraProcessors` are enabled, all entries are rendered into the same global OTel `processors:` block — a key used in both with different configs produces a duplicate YAML key and the last value wins silently. Use signal-scoped names (e.g. `memory_limiter/logs`) to avoid collisions. |
 | global.pipelines.namespace.auto | bool | `true` |  |
 | global.pipelines.namespace.create | bool | `true` |  |
 | global.pipelines.namespace.name | string | `"glassflow-pipelines"` |  |
