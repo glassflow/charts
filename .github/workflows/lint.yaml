@@ -28,15 +28,7 @@ jobs:
         uses: helm/chart-testing-action@v2.6.1
 
       - name: Update Helm dependencies
-        run: |
-          # Pre-package local subcharts so helm dependency update can resolve them
-          # even before they have been published to the remote Helm repo.
-          for chart in charts/postgresql charts/pgbouncer; do
-            if [ -d "$chart" ]; then
-              helm package "$chart" --destination charts/glassflow-etl/charts/
-            fi
-          done
-          helm dependency update charts/glassflow-etl
+        run: helm dependency update charts/glassflow-etl
 
       - name: Run chart-testing (lint)
         run: ct lint --config ct.yaml

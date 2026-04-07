@@ -106,33 +106,11 @@ global:
   postgres:
     # PostgreSQL connection URL
     # Format: postgresql://username:password@host:port/database
-    # Note: when global.pgbouncer.enabled=true, this value is ignored. PGBouncer is only
-    # supported with the internal PostgreSQL deployment (postgresql.enabled=true).
-    # For external PostgreSQL, manage your own connection pooler and point
-    # connection_url to it directly.
     connection_url: ""
-    # Optional direct PostgreSQL URL for migrations (DDL).
-    # Recommended when connection_url points to a pooler such as PgBouncer.
-    # If empty, migration falls back to connection_url.
-    direct_connection_url: ""
     # Alternatively, source the connection URL from a Kubernetes secret
     secret:
       name: ""
-      # App/runtime connection URL key
       key: "connection_url"
-      # Optional direct migration URL key
-      # If empty, migration falls back to "key".
-      direct_key: ""
-
-  # PGBouncer toggle — this is the single flag to enable/disable PGBouncer.
-  # Setting this to true:
-  #   - Deploys the PGBouncer subchart
-  #   - Configures the glassflow-postgresql secret so that connection-url points to
-  #     PGBouncer instead of PostgreSQL directly (transparent to all components)
-  #   - Routes DB migrations to PostgreSQL directly via direct-connection-url
-  # Only supported with postgresql.enabled=true (internal PostgreSQL).
-  pgbouncer:
-    enabled: false
 
   # Encryption configuration for connection credentials
   encryption:
@@ -421,82 +399,6 @@ postgresql:
     limits:
       memory: "2Gi"
       cpu: "1000m"
-
-# =============================================================================
-# PGBOUNCER CONFIGURATION
-# =============================================================================
-# PGBouncer connection pooler configuration.
-#
-# Enable via: --set global.pgbouncer.enabled=true
-#
-# When enabled, PGBouncer is deployed and all pipeline components, the API,
-# and the operator connect to PostgreSQL through it. This prevents connection
-# exhaustion when many pipeline replicas are running (e.g. schema evolution with
-# many ingestor/sink replicas each holding their own connection pool).
-#
-# Requirements:
-#   - postgresql.enabled must be true (internal PostgreSQL).
-#     For external PostgreSQL, manage your own connection pooler and point
-#     global.postgres.connection_url to it directly.
-#
-# Existing users are not affected: defaults to disabled (global.pgbouncer.enabled=false).
-pgbouncer:
-  # Database alias exposed by pgbouncer to clients.
-  # Must match the database name used in glassflow-postgresql connection-url.
-  databaseAlias: "glassflow"
-
-  image:
-    repository: bitnamilegacy/pgbouncer
-    tag: "1.23.1"
-    pullPolicy: IfNotPresent
-
-  # Pool mode: transaction (recommended) or session.
-  # transaction - server connection is returned to the pool after each transaction.
-  #   Most efficient. Requires QueryExecModeSimpleProtocol in the glassflow-api
-  #   postgres driver, which is set automatically when pgbouncer is enabled.
-  # session - server connection held for the entire client session.
-  #   Compatible with prepared statements but provides less pooling benefit.
-  poolMode: "transaction"
-
-  # Maximum number of client connections PGBouncer will accept
-  maxClientConn: 1000
-
-  # Number of server connections per user/database pair
-  defaultPoolSize: 20
-
-  # Minimum number of server connections kept open (0 = none)
-  minPoolSize: 0
-
-  # Extra server connections to use when pool is exhausted
-  reservePoolSize: 5
-
-  # Seconds a server connection can be idle before being closed (0 = disable)
-  serverIdleTimeout: 600
-
-  # Seconds a client connection can be idle before being closed (0 = disable)
-  clientIdleTimeout: 0
-
-  # Startup parameters to silently ignore (pgx sends extra_float_digits by default)
-  ignoreStartupParameters: "extra_float_digits"
-
-  # Server reset query run when a connection is returned to the pool.
-  # Leave empty for transaction mode. Set to "DISCARD ALL" for session mode.
-  serverResetQuery: ""
-
-  replicaCount: 1
-
-  service:
-    type: ClusterIP
-    port: 5432
-    targetPort: 5432
-
-  resources:
-    requests:
-      memory: "64Mi"
-      cpu: "50m"
-    limits:
-      memory: "128Mi"
-      cpu: "200m"
 
 # =============================================================================
 # NATS CONFIGURATION

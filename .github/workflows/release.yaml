@@ -36,17 +36,7 @@ jobs:
           helm repo update
 
       - name: Update Helm dependencies
-        run: |
-          # Pre-package local subcharts so helm dependency update can resolve them
-          # even before they have been published to the remote Helm repo.
-          # This handles the case where a new subchart version (e.g. postgresql or
-          # pgbouncer) is introduced in the same PR as the glassflow-etl update.
-          for chart in charts/postgresql charts/pgbouncer; do
-            if [ -d "$chart" ]; then
-              helm package "$chart" --destination charts/glassflow-etl/charts/
-            fi
-          done
-          helm dependency update charts/glassflow-etl
+        run: helm dependency update charts/glassflow-etl
 
       - name: Run chart releaser
         uses: helm/chart-releaser-action@v1.5.0

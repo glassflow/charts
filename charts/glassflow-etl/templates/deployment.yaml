@@ -217,7 +217,7 @@ spec:
                 sleep 2
               done
               echo "NATS is ready!"
-        {{- if or .Values.postgresql.enabled .Values.global.postgres.connection_url .Values.global.postgres.direct_connection_url .Values.global.postgres.secret.name }}
+        {{- if or .Values.postgresql.enabled .Values.global.postgres.connection_url .Values.global.postgres.secret.name }}
         - name: run-migration
           image: "{{ .Values.global.imageRegistry | default "" }}glassflow-etl-migration:{{ .Values.api.image.tag }}"
           imagePullPolicy: {{ .Values.api.image.pullPolicy }}
@@ -227,15 +227,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: glassflow-postgresql
-                  {{- if .Values.global.pgbouncer.enabled }}
-                  # When PGBouncer is enabled, migrations must connect directly to PostgreSQL
-                  key: direct-connection-url
-                  {{- else }}
                   key: connection-url
-                  {{- end }}
-            {{- else if .Values.global.postgres.direct_connection_url }}
-            - name: POSTGRES_CONNECTION_URL
-              value: {{ .Values.global.postgres.direct_connection_url | quote }}
             {{- else if .Values.global.postgres.connection_url }}
             - name: POSTGRES_CONNECTION_URL
               value: {{ .Values.global.postgres.connection_url | quote }}
@@ -244,11 +236,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.postgres.secret.name }}
-                  {{- if .Values.global.postgres.secret.direct_key }}
-                  key: {{ .Values.global.postgres.secret.direct_key }}
-                  {{- else }}
                   key: {{ .Values.global.postgres.secret.key }}
-                  {{- end }}
             {{- end }}
           resources:
             requests:

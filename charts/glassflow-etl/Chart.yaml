@@ -33,15 +33,10 @@ dependencies:
     condition: nats.enabled
     alias: nats
   - name: postgresql
-    version: "0.1.9"
+    version: "0.1.8"
     repository: https://glassflow.github.io/charts
     condition: postgresql.enabled
     alias: postgresql
-  - name: pgbouncer
-    version: "0.1.0"
-    repository: https://glassflow.github.io/charts
-    condition: global.pgbouncer.enabled
-    alias: pgbouncer
 
 maintainers:
   - name: Glassflow
