@@ -1135,6 +1135,21 @@ entries:
     urls:
     - https://github.com/glassflow/charts/releases/download/glassflow-operator-0.1.0/glassflow-operator-0.1.0.tgz
     version: 0.1.0
+  pgbouncer:
+  - apiVersion: v2
+    appVersion: 1.23.1
+    created: "2026-04-07T12:15:22.070685981Z"
+    description: PGBouncer connection pooler for GlassFlow
+    digest: aa18400507bc9c699f67ee7b615c7ece06fd0af3f914d3c21e4d2444831eb30d
+    maintainers:
+    - email: help@glassflow.dev
+      name: Glassflow
+      url: https://glassflow.dev
+    name: pgbouncer
+    type: application
+    urls:
+    - https://github.com/glassflow/charts/releases/download/pgbouncer-0.1.0/pgbouncer-0.1.0.tgz
+    version: 0.1.0
   postgresql:
   - apiVersion: v2
     appVersion: "17"
@@ -1262,4 +1277,4 @@ entries:
     urls:
     - packages/postgresql-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-01T14:25:04.278443157Z"
+generated: "2026-04-07T12:15:22.070851412Z"
