@@ -27,13 +27,6 @@ jobs:
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.1
 
-      - name: Add Helm repositories
-        run: |
-          helm repo add nats https://nats-io.github.io/k8s/helm/charts/
-          helm repo add glassflow-operator https://glassflow.github.io/glassflow-etl-k8s-operator
-          helm repo add glassflow-charts https://glassflow.github.io/charts
-          helm repo update
-
       - name: Update Helm dependencies
         run: helm dependency update charts/glassflow-etl
 
