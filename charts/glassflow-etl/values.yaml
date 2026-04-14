@@ -342,6 +342,38 @@ glassflow-operator:
         className: ""
       affinity: {}
 # =============================================================================
+# SOURCES CONFIGURATION
+# =============================================================================
+# Data source services that ingest data into GlassFlow pipelines
+sources:
+  # OTLP Receiver - ingests OpenTelemetry data (logs, traces, metrics) via gRPC and HTTP
+  # This is a shared service (one per installation) that routes data to pipelines via NATS
+  otlpReceiver:
+    enabled: false
+    replicas: 1
+    image:
+      repository: glassflow-etl-otlp-receiver
+      tag: main
+      pullPolicy: Always
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    service:
+      type: ClusterIP
+      grpcPort: 4317
+      httpPort: 4318
+    # Environment variables for the OTLP receiver
+    # Example:
+    # env:
+    #   - name: GLASSFLOW_LOG_LEVEL
+    #     value: "DEBUG"
+    env: []
+
+# =============================================================================
 # NATS OPERATOR CONFIGURATION
 # =============================================================================
 # NATS prometheus exporter for getting metrics from NATS

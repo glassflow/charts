@@ -1,0 +1,159 @@
+{{- if .Values.sources.otlpReceiver.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-otlp-receiver
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "glassflow-etl.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.sources.otlpReceiver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "glassflow-etl.selectorLabels" . | nindent 6 }}
+      {{- with .Values.podLabels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      app.kubernetes.io/component: otlp-receiver
+  template:
+    metadata:
+      labels:
+        {{- include "glassflow-etl.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: otlp-receiver
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/otlp-receiver-config: {{ include (print $.Template.BasePath "/otlp-receiver-configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      initContainers:
+        {{- $natsAddress := .Values.global.nats.address | default (printf "nats://%s-nats.%s.svc.cluster.local:4222" .Release.Name .Release.Namespace) }}
+        - name: wait-for-nats
+          image: "busybox:1.35"
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for NATS to be ready..."
+              NATS_URL="{{ $natsAddress }}"
+              # Remove protocol prefix if present
+              NATS_HOST_PORT="${NATS_URL#nats://}"
+              NATS_HOST_PORT="${NATS_HOST_PORT#nats-secure://}"
+              # Extract host and port
+              if echo "$NATS_HOST_PORT" | grep -q ":"; then
+                NATS_HOST=$(echo "$NATS_HOST_PORT" | cut -d: -f1)
+                NATS_PORT=$(echo "$NATS_HOST_PORT" | cut -d: -f2)
+              else
+                NATS_HOST="$NATS_HOST_PORT"
+                NATS_PORT="4222"
+              fi
+              echo "Checking NATS at $NATS_HOST:$NATS_PORT..."
+              until nc -z "$NATS_HOST" "$NATS_PORT"; do
+                echo "NATS not ready, waiting..."
+                sleep 2
+              done
+              echo "NATS is ready!"
+        - name: wait-for-api
+          image: "busybox:1.35"
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for API to be ready..."
+              until nc -z {{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local {{ .Values.api.service.port }}; do
+                echo "API not ready, waiting..."
+                sleep 2
+              done
+              echo "API is ready!"
+      containers:
+        - name: otlp-receiver
+          image: "{{ .Values.global.imageRegistry | default "" }}{{ .Values.sources.otlpReceiver.image.repository }}:{{ .Values.sources.otlpReceiver.image.tag }}"
+          imagePullPolicy: {{ .Values.sources.otlpReceiver.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: http
+              containerPort: 4318
+              protocol: TCP
+          {{- with .Values.sources.otlpReceiver.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-otlp-receiver-config
+          env:
+            {{- if .Values.postgresql.enabled }}
+            - name: GLASSFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: glassflow-postgresql
+                  key: connection-url
+            {{- else if .Values.global.postgres.connection_url }}
+            - name: GLASSFLOW_DATABASE_URL
+              value: {{ .Values.global.postgres.connection_url | quote }}
+            {{- else if .Values.global.postgres.secret.name }}
+            - name: GLASSFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.postgres.secret.name }}
+                  key: {{ .Values.global.postgres.secret.key }}
+            {{- end }}
+            {{- if .Values.sources.otlpReceiver.env }}
+            {{- range .Values.sources.otlpReceiver.env }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          {{- if and .Values.global.encryption.enabled .Values.global.encryption.existingSecret.name }}
+          volumeMounts:
+            - name: encryption-key
+              mountPath: /etc/glassflow/secrets
+              readOnly: true
+          {{- end }}
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+      serviceAccountName: {{ include "glassflow-etl.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if and .Values.global.encryption.enabled .Values.global.encryption.existingSecret.name }}
+      volumes:
+        - name: encryption-key
+          secret:
+            secretName: {{ .Values.global.encryption.existingSecret.name }}
+            defaultMode: 0444
+            items:
+              - key: {{ .Values.global.encryption.existingSecret.key | default "encryption-key" }}
+                path: encryption-key
+      {{- end }}
+{{- end }}
