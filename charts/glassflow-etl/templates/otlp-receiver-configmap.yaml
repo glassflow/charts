@@ -13,4 +13,5 @@ data:
   GLASSFLOW_OTLP_CONFIG_FETCHER_BASE_URL: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.api.service.port }}"
   GLASSFLOW_LOG_LEVEL: "info"
   GLASSFLOW_RUN_LOCAL: "false"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://{{ .Release.Name }}-otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4318"
 {{- end }}
