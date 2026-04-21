@@ -705,7 +705,7 @@ notificationService:
   replicas: 1
   image:
     repository: glassflow-notifier
-    tag: v1.0.1
+    tag: v1.0.2
     pullPolicy: IfNotPresent
   resources:
     requests:
