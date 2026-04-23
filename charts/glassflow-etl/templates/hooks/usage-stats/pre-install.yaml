@@ -35,21 +35,31 @@ spec:
               set +e  # Don't exit on errors - make failures non-blocking
               
               apk add --no-cache jq uuidgen >/dev/null 2>&1
-              
-              {{- if .Values.global.usageStats.installationId }}
-              INSTALLATION_ID="{{ .Values.global.usageStats.installationId }}"
-              {{- else }}
-              INSTALLATION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-              {{- end }}
+
               USAGE_STATS_ENDPOINT="https://tracking.glassflow.dev/api/v1"
               USAGE_STATS_USERNAME="5PR3vzYGGlYttkBXRTYuzw=="
               USAGE_STATS_PASSWORD="5tJcYQNR85KKyOwpeIFVdGqGIOgFwxmWEHu0t7WxBbo="
-              
+
               KUBE_API="https://kubernetes.default.svc"
               TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
               CA_CERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
               NAMESPACE="{{ .Release.Namespace }}"
               SECRET_NAME="{{ .Release.Name }}-usage-stats-config"
+
+              # Read existing secret first — needed both for ID preservation and POST vs PATCH decision
+              EXISTING_SECRET=$(curl -sS --max-time 5 --cacert "$CA_CERT" \
+                -H "Authorization: Bearer $TOKEN" \
+                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
+
+              {{- if .Values.global.usageStats.installationId }}
+              INSTALLATION_ID="{{ .Values.global.usageStats.installationId }}"
+              {{- else }}
+              # Preserve existing installation ID on upgrades — only generate a new one on first install
+              INSTALLATION_ID=$(echo "$EXISTING_SECRET" | jq -r '.data.installation_id // empty' | base64 -d 2>/dev/null)
+              if [ -z "$INSTALLATION_ID" ]; then
+                INSTALLATION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+              fi
+              {{- end }}
               
               echo "Usage stats: Getting auth token..."
               AUTH_RESP=$(curl -sS --max-time 10 -X POST \
@@ -196,11 +206,6 @@ spec:
                 echo "WARNING: Usage stats - Failed to create secret data, continuing anyway"
                 exit 0
               fi
-              
-              # Try to get existing secret first to preserve metadata
-              EXISTING_SECRET=$(curl -sS --max-time 5 --cacert "$CA_CERT" \
-                -H "Authorization: Bearer $TOKEN" \
-                "$KUBE_API/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME" 2>/dev/null || echo "{}")
               
               if echo "$EXISTING_SECRET" | jq -e '.kind == "Secret"' >/dev/null 2>&1; then
                 # Secret exists, use PATCH to update it

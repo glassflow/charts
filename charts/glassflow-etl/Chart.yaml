@@ -15,17 +15,17 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.5.15
+version: 0.5.16
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
-appVersion: "2.11.2"
+appVersion: "3.0.0"
 
 dependencies:
   - name: glassflow-operator
-    version: "0.7.8"
+    version: "0.8.0"
     repository: https://glassflow.github.io/glassflow-etl-k8s-operator
   - name: nats
     version: "2.12.3"
@@ -33,10 +33,15 @@ dependencies:
     condition: nats.enabled
     alias: nats
   - name: postgresql
-    version: "0.1.8"
+    version: "0.1.9"
     repository: https://glassflow.github.io/charts
     condition: postgresql.enabled
     alias: postgresql
+  - name: pgbouncer
+    version: "0.1.0"
+    repository: https://glassflow.github.io/charts
+    condition: global.pgbouncer.enabled
+    alias: pgbouncer
 
 maintainers:
   - name: Glassflow
