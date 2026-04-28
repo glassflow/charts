@@ -45,14 +45,11 @@ Chart versions are bumped on each release. The `cli` embeds or references chart 
 
 ## Domain context
 
-For glossary, architecture diagrams, customer personas, and cross-repo workflows see the shared context repo (sibling directory):
+The shared context repo lives at `../glassflow-agent-context/` (sibling directory). Read files from it when:
 
-```
-../glassflow-agent-context/
-  domain/glossary.md              # Key terms and definitions
-  domain/deployment-topology.md   # How components fit together in prod
-  workflows/release-process.md    # Release and versioning process
-  workflows/linear-tickets.md     # Ticket → branch → PR flow
-```
+- **Implementing a feature or ticket** → read `../glassflow-agent-context/workflows/linear-tickets.md` before branching
+- **Writing a PR description** → read `../glassflow-agent-context/prompts/pr-description.md`
+- **Bumping chart versions for a release** → read `../glassflow-agent-context/workflows/release-process.md`
+- **Domain terminology is ambiguous** → read `../glassflow-agent-context/domain/glossary.md`
 
-Load these on demand when doing design work, writing PR descriptions, or when domain terminology is ambiguous. Don't load them for routine code tasks.
+Don't load these for routine bug fixes or code tasks — read the code directly instead.
