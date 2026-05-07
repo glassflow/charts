@@ -152,7 +152,7 @@ api:
   logLevel: "info"
   image:
     repository: glassflow-etl-be
-    tag: v3.0.0
+    tag: v3.1.0
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -187,7 +187,7 @@ ui:
   replicas: 1
   image:
     repository: glassflow-etl-fe
-    tag: v3.0.0
+    tag: v3.1.0
     pullPolicy: IfNotPresent
   logLevel: "info"
   resources:
@@ -266,7 +266,7 @@ glassflow-operator:
       reconcileTimeout: 15m
       image:
         repository: glassflow-etl-k8s-operator
-        tag: v3.0.0
+        tag: v3.1.0
         pullPolicy: IfNotPresent
       resources:
         limits:
@@ -282,7 +282,7 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: v3.0.0
+        tag: v3.1.0
         pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
@@ -297,7 +297,7 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: v3.0.0
+        tag: v3.1.0
         pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
@@ -312,7 +312,7 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: v3.0.0
+        tag: v3.1.0
         pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
@@ -327,7 +327,7 @@ glassflow-operator:
     dedup:
       image:
         repository: glassflow-etl-dedup
-        tag: v3.0.0
+        tag: v3.1.0
         pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
@@ -353,8 +353,8 @@ sources:
     replicas: 1
     image:
       repository: glassflow-etl-otlp-receiver
-      tag: v3.0.0
-      pullPolicy: Always
+      tag: v3.1.0
+      pullPolicy: IfNotPresent
     resources:
       requests:
         memory: "256Mi"
@@ -366,7 +366,14 @@ sources:
       type: ClusterIP
       grpcPort: 4317
       httpPort: 4318
-    # Environment variables for the OTLP receiver
+    # Max concurrent in-flight batches before the receiver starts shedding load
+    # (returns HTTP 503 / gRPC ResourceExhausted). Increase if you need higher
+    # throughput but ensure the pod has enough CPU/memory headroom.
+    maxConcurrentRequests: 50
+    # Max messages per NATS async-publish chunk. Keeps per-request memory bounded
+    # regardless of upstream batch size.
+    natsChunkSize: 1000
+    # Additional environment variables for the OTLP receiver
     # Example:
     # env:
     #   - name: GLASSFLOW_LOG_LEVEL
