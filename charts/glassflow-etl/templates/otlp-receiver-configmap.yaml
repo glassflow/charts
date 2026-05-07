@@ -11,6 +11,8 @@ data:
   GLASSFLOW_ROLE: "otlp-receiver"
   GLASSFLOW_NATS_SERVER: "{{ .Values.global.nats.address | default (printf "nats://%s-nats.%s.svc.cluster.local:4222" .Release.Name .Release.Namespace) }}"
   GLASSFLOW_OTLP_CONFIG_FETCHER_BASE_URL: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.api.service.port }}"
+  GLASSFLOW_OTLP_MAX_CONCURRENT_REQUESTS: "{{ .Values.sources.otlpReceiver.maxConcurrentRequests }}"
+  GLASSFLOW_OTLP_NATS_CHUNK_SIZE: "{{ .Values.sources.otlpReceiver.natsChunkSize }}"
   GLASSFLOW_LOG_LEVEL: "info"
   GLASSFLOW_RUN_LOCAL: "false"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://{{ .Release.Name }}-otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4318"
