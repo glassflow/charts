@@ -98,7 +98,7 @@ global:
       create: true
 
   usageStats:
-    enabled: false
+    enabled: true
     # Optional: provide an installation ID
     installationId: ""
 
@@ -152,8 +152,8 @@ api:
   logLevel: "info"
   image:
     repository: glassflow-etl-be
-    tag: main
-    pullPolicy: Always
+    tag: v3.0.0
+    pullPolicy: IfNotPresent
   resources:
     requests:
       memory: "100Mi"  # Memory request - adjust based on your workload
@@ -266,8 +266,8 @@ glassflow-operator:
       reconcileTimeout: 15m
       image:
         repository: glassflow-etl-k8s-operator
-        tag: main
-        pullPolicy: Always
+        tag: v3.0.0
+        pullPolicy: IfNotPresent
       resources:
         limits:
           cpu: 500m
@@ -282,8 +282,8 @@ glassflow-operator:
     ingestor:
       image:
         repository: glassflow-etl-ingestor
-        tag: main
-        pullPolicy: Always
+        tag: v3.0.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -297,8 +297,8 @@ glassflow-operator:
     join:
       image:
         repository: glassflow-etl-join
-        tag: main
-        pullPolicy: Always
+        tag: v3.0.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -312,8 +312,8 @@ glassflow-operator:
     sink:
       image:
         repository: glassflow-etl-sink
-        tag: main
-        pullPolicy: Always
+        tag: v3.0.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -327,8 +327,8 @@ glassflow-operator:
     dedup:
       image:
         repository: glassflow-etl-dedup
-        tag: main
-        pullPolicy: Always
+        tag: v3.0.0
+        pullPolicy: IfNotPresent
       logLevel: "INFO"
       resources:
         requests:
@@ -353,7 +353,7 @@ sources:
     replicas: 1
     image:
       repository: glassflow-etl-otlp-receiver
-      tag: main
+      tag: v3.0.0
       pullPolicy: Always
     resources:
       requests:
