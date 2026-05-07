@@ -258,6 +258,46 @@ spec:
               memory: "512Mi"
               cpu: "500m"
           securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+        - name: run-data-migration
+          image: "{{ .Values.global.imageRegistry | default "" }}{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          args: ["-role=migrate-data"]
+          env:
+            {{- if .Values.postgresql.enabled }}
+            - name: GLASSFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: glassflow-postgresql
+                  {{- if .Values.global.pgbouncer.enabled }}
+                  key: direct-connection-url
+                  {{- else }}
+                  key: connection-url
+                  {{- end }}
+            {{- else if .Values.global.postgres.direct_connection_url }}
+            - name: GLASSFLOW_DATABASE_URL
+              value: {{ .Values.global.postgres.direct_connection_url | quote }}
+            {{- else if .Values.global.postgres.connection_url }}
+            - name: GLASSFLOW_DATABASE_URL
+              value: {{ .Values.global.postgres.connection_url | quote }}
+            {{- else if .Values.global.postgres.secret.name }}
+            - name: GLASSFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.postgres.secret.name }}
+                  {{- if .Values.global.postgres.secret.direct_key }}
+                  key: {{ .Values.global.postgres.secret.direct_key }}
+                  {{- else }}
+                  key: {{ .Values.global.postgres.secret.key }}
+                  {{- end }}
+            {{- end }}
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
       {{- end }}
       containers:
         - name: api
