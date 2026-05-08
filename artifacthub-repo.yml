@@ -17,6 +17,12 @@ owners:
 # Skip security scanning of legacy chart versions whose container image
 # references no longer exist in the registry (e.g., glassflow/clickhouse-etl-fe:stable,
 # glassflow-etl-k8s-operator:v1.0.0). Versions 0.5.0 and later scan cleanly.
+#
+# `glassflow-operator` is also fully ignored here: a stale 0.1.0 release is
+# leftover in this repo from before the operator chart moved to its own repo
+# at https://glassflow.github.io/glassflow-etl-k8s-operator. The real chart is
+# registered separately on ArtifactHub.
 ignore:
   - name: glassflow-etl
     version: ^0\.[0-4]\.
+  - name: glassflow-operator
