@@ -1,0 +1,15 @@
+# ArtifactHub repository metadata.
+# https://artifacthub.io/docs/topics/repositories/helm-charts/
+#
+# - The `owners` block claims this Helm repository under the listed account on
+#   ArtifactHub. The email must match the email on the ArtifactHub user that
+#   adds this repository in the UI.
+# - `repositoryID` is filled in after the first UI registration on
+#   artifacthub.io. With it set, the listing displays the "Verified Publisher"
+#   badge and ArtifactHub knows this repo is the source of truth.
+
+# repositoryID: <add after first ArtifactHub registration to enable Verified Publisher badge>
+
+owners:
+  - name: GlassFlow
+    email: info@glassflow.dev
