@@ -8,7 +8,7 @@
 #   artifacthub.io. With it set, the listing displays the "Verified Publisher"
 #   badge and ArtifactHub knows this repo is the source of truth.
 
-# repositoryID: <add after first ArtifactHub registration to enable Verified Publisher badge>
+repositoryID: 33d8f009-42db-43c0-a839-4f48411bad9c
 
 owners:
   - name: GlassFlow
