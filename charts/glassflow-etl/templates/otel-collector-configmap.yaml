@@ -1,4 +1,10 @@
-{{- if or .Values.global.observability.metrics.enabled .Values.global.observability.logs.enabled }}
+{{- /* Validate observability config first — fails install on bad combinations. */ -}}
+{{- include "glassflow-etl.observability.validate" . -}}
+{{- $metricsEnabled := .Values.global.observability.metrics.enabled -}}
+{{- $logsEnabled := .Values.global.observability.logs.enabled -}}
+{{- $metricsInternal := .Values.global.observability.metrics.internal.enabled -}}
+{{- $logsInternal := .Values.global.observability.logs.internal.enabled -}}
+{{- if or $metricsEnabled $logsEnabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,7 +19,7 @@ data:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
-{{- if and .Values.nats.enabled .Values.global.observability.metrics.enabled }}
+{{- if and .Values.nats.enabled $metricsEnabled }}
       prometheus:
         config:
           scrape_configs:
@@ -39,24 +45,30 @@ data:
           - key: service.namespace
             from_attribute: service.namespace
             action: insert
-{{- if .Values.global.observability.logs.enabled }}
+{{- if $logsEnabled }}
   {{- range $name, $cfg := (default dict .Values.global.observability.logs.extraProcessors) }}
       {{ $name }}: {{- toYaml $cfg | nindent 8 }}
   {{- end }}
 {{- end }}
-{{- if .Values.global.observability.metrics.enabled }}
+{{- if $metricsEnabled }}
   {{- range $name, $cfg := (default dict .Values.global.observability.metrics.extraProcessors) }}
       {{ $name }}: {{- toYaml $cfg | nindent 8 }}
   {{- end }}
 {{- end }}
 
     exporters:
-{{- if .Values.global.observability.logs.enabled }}
+{{- if $logsEnabled }}
   {{- range $name, $cfg := .Values.global.observability.logs.exporter }}
       {{ $name }}: {{- toYaml $cfg | nindent 8 }}
   {{- end }}
+  {{- if $logsInternal }}
+      otlphttp/internal_logs:
+        endpoint: "http://{{ include "glassflow-etl.internalVLService" . }}:9428/insert/opentelemetry"
+        tls:
+          insecure: true
+  {{- end }}
 {{- end }}
-{{- if .Values.global.observability.metrics.enabled }}
+{{- if $metricsEnabled }}
       prometheus:
         endpoint: "0.0.0.0:9090"
         namespace: {{ .Release.Namespace }}
@@ -65,8 +77,14 @@ data:
   {{- range $name, $cfg := (default dict .Values.global.observability.metrics.extraExporters) }}
       {{ $name }}: {{- toYaml $cfg | nindent 8 }}
   {{- end }}
+  {{- if $metricsInternal }}
+      prometheusremotewrite/internal:
+        endpoint: "http://{{ include "glassflow-etl.internalVMService" . }}:8428/api/v1/write"
+        tls:
+          insecure: true
+  {{- end }}
 {{- end }}
-        
+
     extensions:
       health_check:
         endpoint: 0.0.0.0:13133
@@ -74,10 +92,13 @@ data:
     service:
       extensions: [health_check]
       pipelines:
-{{- if .Values.global.observability.logs.enabled }}
-          {{- $logExporters := keys .Values.global.observability.logs.exporter | sortAlpha -}}
+{{- if $logsEnabled }}
+          {{- $logExporters := keys (default dict .Values.global.observability.logs.exporter) | sortAlpha }}
+          {{- if $logsInternal }}
+          {{- $logExporters = append $logExporters "otlphttp/internal_logs" }}
+          {{- end }}
           {{- if eq (len $logExporters) 0 -}}
-          {{- fail "logs.enabled=true requires at least one exporter configured under global.observability.logs.exporter" -}}
+          {{- fail "logs.enabled=true requires at least one exporter — configure global.observability.logs.exporter or set global.observability.logs.internal.enabled=true" -}}
           {{- end }}
           {{- $logExtraProcessors := keys (default dict .Values.global.observability.logs.extraProcessors) | sortAlpha }}
         logs:
@@ -85,12 +106,16 @@ data:
           processors: [{{ if $logExtraProcessors }}{{ join ", " $logExtraProcessors }}, {{ end }}resource, batch]
           exporters: [{{ join ", " $logExporters }}]
 {{- end }}
-{{- if .Values.global.observability.metrics.enabled }}
-          {{- $metricsExtraExporters := keys (default dict .Values.global.observability.metrics.extraExporters) | sortAlpha }}
+{{- if $metricsEnabled }}
+          {{- $metricsExporters := keys (default dict .Values.global.observability.metrics.extraExporters) | sortAlpha }}
+          {{- $metricsExporters = prepend $metricsExporters "prometheus" }}
+          {{- if $metricsInternal }}
+          {{- $metricsExporters = append $metricsExporters "prometheusremotewrite/internal" }}
+          {{- end }}
           {{- $metricsExtraProcessors := keys (default dict .Values.global.observability.metrics.extraProcessors) | sortAlpha }}
         metrics:
           receivers: [otlp{{- if .Values.nats.enabled }}, prometheus{{- end }}]
           processors: [{{ if $metricsExtraProcessors }}{{ join ", " $metricsExtraProcessors }}, {{ end }}resource, batch]
-          exporters: [prometheus{{ if $metricsExtraExporters }}, {{ join ", " $metricsExtraExporters }}{{ end }}]
+          exporters: [{{ join ", " $metricsExporters }}]
 {{- end }}
 {{- end }}

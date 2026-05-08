@@ -9,13 +9,35 @@
 global:
   # Global image registry - if set, will be prepended to all image repositories
   imageRegistry: "ghcr.io/glassflow/"
+
+  # =============================================================================
+  # OBSERVABILITY
+  # =============================================================================
+  # Each signal (metrics, logs) has its own block. Inside each:
+  #   - `enabled`         — gates the entire signal: the OTel collector pipeline,
+  #                          component-side emission, and any internal/external
+  #                          destination underneath. Disabling the signal disables
+  #                          everything below it.
+  #   - `extraExporters` / `exporter` — external destinations (user-managed backends
+  #                          like Prometheus, Loki, Datadog). Multiple destinations
+  #                          fan out.
+  #   - `internal.enabled` — bundled destination for that signal:
+  #                            metrics → VictoriaMetrics
+  #                            logs    → VictoriaLogs
+  #                          Has no effect unless the parent `enabled: true`.
+  #                          Setting `internal.enabled=true` alongside `enabled=false`
+  #                          fails the install with a clear error.
+  #
+  # Detailed knobs for the bundled VM/VL subcharts (retention, storage, resources)
+  # live in the top-level `victoria-metrics-single:` / `victoria-logs-single:`
+  # blocks at the bottom of this file — Helm requires subchart values at the top
+  # level, not nested under the parent's keys.
   observability:
     metrics:
       enabled: true
-      # Additional exporters added alongside the built-in Prometheus exporter.
-      # The Prometheus scrape endpoint (port 9090) is always enabled when metrics.enabled=true.
-      # Use this map to push metrics to additional backends (e.g. otlp, otlphttp).
-      # To disable metrics export entirely, set metrics.enabled: false.
+      # External destinations. The built-in Prometheus :9090 scrape endpoint is
+      # always exposed when metrics.enabled=true. Use this map to push metrics to
+      # additional backends (e.g. otlp, otlphttp).
       # Example:
       #   extraExporters:
       #     otlp:
@@ -24,51 +46,46 @@ global:
       #         insecure: true
       extraExporters: {}
       # Extra processors added to the metrics pipeline before the default resource and batch processors.
-      # Keys are OTel processor names, values are their config.
-      # Use the name/label convention (e.g. memory_limiter/metrics) for multiple instances of the same
-      # type, and to avoid collisions when both metrics and logs extraProcessors are enabled — both
-      # blocks are rendered into the same global OTel processors section, so a shared key (e.g.
-      # memory_limiter) with different configs produces a duplicate YAML key and the last value wins
-      # silently. Unique names per signal prevent this.
+      # Use signal-scoped names (e.g. memory_limiter/metrics) to avoid collisions
+      # when both signals define a same-named processor — both are rendered into
+      # the shared OTel processors section and the last one wins silently.
       # Example:
       #   extraProcessors:
       #     memory_limiter/metrics:
       #       check_interval: 1s
       #       limit_mib: 512
-      #     resource/metrics:
-      #       attributes:
-      #         - key: deployment.environment
-      #           value: production
-      #           action: insert
       extraProcessors: {}
+      # Bundled internal destination: VictoriaMetrics. Only takes effect when
+      # metrics.enabled=true above. Tune retention/storage/resources via the
+      # top-level `victoria-metrics-single:` block.
+      internal:
+        enabled: false
+
     logs:
       enabled: false
-      # Exporters map: keys are OTel exporter names, values are their config.
-      # At least one exporter must be configured when logs.enabled=true.
-      # Any OTel-supported exporter type is accepted (otlp, otlphttp, etc.).
+      # External destinations. At least one exporter must be configured when
+      # logs.enabled=true and internal.enabled=false.
       # Example:
       #   exporter:
-      #     otlp:
-      #       endpoint: "my-collector:4317"
-      #       tls:
-      #         insecure: true
       #     otlphttp:
       #       endpoint: "http://my-collector:4318"
       #       headers:
       #         Authorization: "Bearer <token>"
       exporter: {}
-      # Extra processors added to the logs pipeline before the default resource and batch processors.
-      # Keys are OTel processor names, values are their config.
-      # WARNING: if both metrics and logs extraProcessors define the same key with different configs,
-      # both are rendered into the shared OTel processors section — the last definition wins silently.
-      # Use signal-scoped names (e.g. memory_limiter/logs) to avoid this.
+      # Extra processors. Same name-collision warning as metrics.extraProcessors.
       # Example:
       #   extraProcessors:
       #     memory_limiter/logs:
       #       check_interval: 1s
       #       limit_mib: 256
       extraProcessors: {}
-    # OpenTelemetry collector resources (used when metrics or logs are enabled)
+      # Bundled internal destination: VictoriaLogs. Only takes effect when
+      # logs.enabled=true above. Tune retention/storage/resources via the
+      # top-level `victoria-logs-single:` block.
+      internal:
+        enabled: false
+
+    # OpenTelemetry collector resources (used when any signal is enabled).
     otelCollector:
       resources:
         requests:
@@ -77,6 +94,7 @@ global:
         limits:
           cpu: 500m
           memory: 512Mi
+
   notifications:  # configure slack / email channel details in notificationService section below
     enabled: true
   nats:
@@ -765,3 +783,64 @@ notificationService:
   #     port: 8080
   #   initialDelaySeconds: 5
   #   periodSeconds: 5
+
+# =============================================================================
+# VICTORIAMETRICS (BUNDLED) — STORAGE / RETENTION / RESOURCES
+# =============================================================================
+# Passed verbatim to the upstream `victoria-metrics-single` subchart.
+# Helm requires subchart values at the top level (not nested under the parent's
+# observability block), so this is where you tune retention, persistent storage,
+# pod resources, ingress, TLS, auth, and any other upstream chart knob.
+#
+# Only takes effect when global.observability.metrics.internal.enabled=true.
+#
+# Service exposed at: <release>-victoria-metrics-single-server.<namespace>.svc.cluster.local:8428
+#
+# Full upstream values reference:
+#   https://github.com/VictoriaMetrics/helm-charts/tree/master/charts/victoria-metrics-single
+victoria-metrics-single:
+  server:
+    enabled: true
+    retentionPeriod: "7d"
+    persistentVolume:
+      enabled: true
+      size: 10Gi
+      # storageClass: ""   # uncomment to pin a StorageClass
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    service:
+      servicePort: 8428
+
+# =============================================================================
+# VICTORIALOGS (BUNDLED) — STORAGE / RETENTION / RESOURCES
+# =============================================================================
+# Passed verbatim to the upstream `victoria-logs-single` subchart. Same
+# reasoning as VictoriaMetrics above — Helm subchart values must live at the
+# top level, so retention / storage / resources are tuned here.
+#
+# Only takes effect when global.observability.logs.internal.enabled=true.
+#
+# Service exposed at: <release>-victoria-logs-single-server.<namespace>.svc.cluster.local:9428
+#
+# Full upstream values reference:
+#   https://github.com/VictoriaMetrics/helm-charts/tree/master/charts/victoria-logs-single
+victoria-logs-single:
+  server:
+    enabled: true
+    retentionPeriod: "3d"
+    persistentVolume:
+      enabled: true
+      size: 5Gi
+      # storageClass: ""
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 512Mi
