@@ -3,6 +3,42 @@ entries:
   glassflow-etl:
   - apiVersion: v2
     appVersion: 3.1.0
+    created: "2026-05-11T09:40:46.290433128Z"
+    dependencies:
+    - name: glassflow-operator
+      repository: https://glassflow.github.io/glassflow-etl-k8s-operator
+      version: 0.8.1
+    - alias: nats
+      condition: nats.enabled
+      name: nats
+      repository: https://nats-io.github.io/k8s/helm/charts/
+      version: 2.12.3
+    - alias: postgresql
+      condition: postgresql.enabled
+      name: postgresql
+      repository: https://glassflow.github.io/charts
+      version: 0.1.9
+    - alias: pgbouncer
+      condition: global.pgbouncer.enabled
+      name: pgbouncer
+      repository: https://glassflow.github.io/charts
+      version: 0.1.0
+    description: Streaming ETL for ClickHouse — deduplication, joins, and transforms
+      over Kafka and other sources
+    digest: 89b9895b073d5cb0cc6503bbda903e4bbcf7b5768abc62bde7bb776ef85447bb
+    home: https://www.glassflow.dev
+    icon: https://charts.glassflow.dev/logo.svg
+    maintainers:
+    - email: help@glassflow.dev
+      name: Glassflow
+      url: https://glassflow.dev
+    name: glassflow-etl
+    type: application
+    urls:
+    - https://github.com/glassflow/charts/releases/download/glassflow-etl-0.5.18/glassflow-etl-0.5.18.tgz
+    version: 0.5.18
+  - apiVersion: v2
+    appVersion: 3.1.0
     created: "2026-05-07T13:54:34.948700194Z"
     dependencies:
     - name: glassflow-operator
@@ -1357,4 +1393,4 @@ entries:
     urls:
     - packages/postgresql-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-07T13:54:34.948969996Z"
+generated: "2026-05-11T09:40:46.290706551Z"
