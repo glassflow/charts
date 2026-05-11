@@ -67,3 +67,33 @@ Create the name of the usage stats service account to use
 {{- define "glassflow-etl.usageStatsServiceAccountName" -}}
 {{- include "glassflow-etl.fullname" . }}-usage-stats
 {{- end }}
+
+{{/*
+Validate observability config. Fails the install with a clear error when an
+internal subchart is requested without its parent signal enabled.
+Invoked unconditionally from otel-collector-configmap.yaml (and any other
+template) so misconfigurations are caught even when the surrounding template
+itself doesn't render.
+*/}}
+{{- define "glassflow-etl.observability.validate" -}}
+{{- if and .Values.global.observability.metrics.internal.enabled (not .Values.global.observability.metrics.enabled) -}}
+{{- fail "global.observability.metrics.internal.enabled requires global.observability.metrics.enabled=true" -}}
+{{- end -}}
+{{- if and .Values.global.observability.logs.internal.enabled (not .Values.global.observability.logs.enabled) -}}
+{{- fail "global.observability.logs.internal.enabled requires global.observability.logs.enabled=true" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+DNS name of the bundled VictoriaMetrics service (subchart-managed).
+*/}}
+{{- define "glassflow-etl.internalVMService" -}}
+{{ .Release.Name }}-victoria-metrics-single-server
+{{- end }}
+
+{{/*
+DNS name of the bundled VictoriaLogs service (subchart-managed).
+*/}}
+{{- define "glassflow-etl.internalVLService" -}}
+{{ .Release.Name }}-victoria-logs-single-server
+{{- end }}

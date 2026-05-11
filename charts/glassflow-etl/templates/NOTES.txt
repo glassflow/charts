@@ -20,3 +20,22 @@
   echo "Visit http://127.0.0.1:8080 to use your application"
   kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
 {{- end }}
+{{- if or .Values.global.observability.metrics.internal.enabled .Values.global.observability.logs.internal.enabled }}
+
+2. Internal observability is enabled. The OTel collector fans out to the bundled
+   destinations in addition to any external exporters.
+{{- if .Values.global.observability.metrics.internal.enabled }}
+
+   VictoriaMetrics:  http://{{ include "glassflow-etl.internalVMService" . }}.{{ .Release.Namespace }}.svc.cluster.local:8428
+     kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "glassflow-etl.internalVMService" . }} 8428
+     curl 'http://localhost:8428/api/v1/query?query=gfm_ingestor_consumed_total'
+{{- end }}
+{{- if .Values.global.observability.logs.internal.enabled }}
+
+   VictoriaLogs:     http://{{ include "glassflow-etl.internalVLService" . }}.{{ .Release.Namespace }}.svc.cluster.local:9428
+     kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "glassflow-etl.internalVLService" . }} 9428
+     curl 'http://localhost:9428/select/logsql/query?query=service.name:glassflow-api'
+{{- end }}
+
+   GlassFlow API query endpoints arrive in M2 (ETL-1014).
+{{- end }}

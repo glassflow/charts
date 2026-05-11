@@ -43,7 +43,14 @@ dependencies:
     version: "0.1.0"
     repository: https://glassflow.github.io/charts
     condition: global.pgbouncer.enabled
-    alias: pgbouncer
+  - name: victoria-metrics-single
+    version: "0.37.0"
+    repository: https://victoriametrics.github.io/helm-charts/
+    condition: global.observability.metrics.internal.enabled
+  - name: victoria-logs-single
+    version: "0.12.4"
+    repository: https://victoriametrics.github.io/helm-charts/
+    condition: global.observability.logs.internal.enabled
 
 maintainers:
   - name: Glassflow

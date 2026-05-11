@@ -1,0 +1,107 @@
+# Dev / local-cluster overrides for charts/glassflow-etl.
+#
+# Cuts resource requests + replicas to fit on a laptop kind / docker-desktop
+# cluster. Not for staging or production.
+#
+# Usage:
+#   helm install glassflow ./packages/glassflow-etl-0.5.18.tgz \
+#     -n glassflow --create-namespace \
+#     -f charts/glassflow-etl/values.dev.yaml
+
+# -----------------------------------------------------------------------------
+# Internal observability ON for dev — exercises the bundled VM + VL stack.
+# Note: VM/VL persistence + resources are driven by the upstream subcharts'
+# top-level blocks below (victoria-metrics-single / victoria-logs-single).
+# The internal.enabled flags here only gate "subchart deployed + collector
+# fan-out wired"; they require the parent metrics/logs.enabled to be true.
+# -----------------------------------------------------------------------------
+global:
+  observability:
+    metrics:
+      enabled: true
+      internal:
+        enabled: true
+    logs:
+      # Flip to true so the operator stamps GLASSFLOW_OTEL_LOGS_ENABLED=true on
+      # data-plane Pods (ingestor/sink/dedup/join), otherwise their logs never
+      # reach VictoriaLogs.
+      enabled: true
+      internal:
+        enabled: true
+    otelCollector:
+      resources:
+        requests: { cpu: 50m,  memory: 64Mi }
+        limits:   { cpu: 200m, memory: 256Mi }
+
+victoria-metrics-single:
+  server:
+    retentionPeriod: "1d"
+    persistentVolume:
+      enabled: true
+      size: 1Gi
+    resources:
+      requests: { cpu: 50m,  memory: 128Mi }
+      limits:   { cpu: 200m, memory: 512Mi }
+
+victoria-logs-single:
+  server:
+    retentionPeriod: "1d"
+    persistentVolume:
+      enabled: true
+      size: 1Gi
+    resources:
+      requests: { cpu: 25m,  memory: 64Mi }
+      limits:   { cpu: 100m, memory: 256Mi }
+
+# -----------------------------------------------------------------------------
+# NATS — single replica, 1 CPU, 1 GiB RAM, 5 GiB disk.
+# Default chart ships 3×4cpu/3Gi/100Gi which won't fit on a laptop.
+# -----------------------------------------------------------------------------
+nats:
+  config:
+    cluster:
+      replicas: 3
+    jetstream:
+      fileStore:
+        pvc:
+          size: 5Gi
+  container:
+    merge:
+      resources:
+        requests: { cpu: "1000m", memory: "1Gi" }
+        limits:   { cpu: "1000m", memory: "1Gi" }
+
+# -----------------------------------------------------------------------------
+# PostgreSQL — single replica, dev-only password (don't use these in prod).
+# -----------------------------------------------------------------------------
+postgresql:
+  replicaCount: 1
+  persistence:
+    size: 2Gi
+
+# -----------------------------------------------------------------------------
+# GlassFlow components — modest requests, generous limits for room to grow.
+# -----------------------------------------------------------------------------
+api:
+  resources:
+    requests: { cpu: 50m,  memory: 128Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+
+ui:
+  resources:
+    requests: { cpu: 50m,  memory: 256Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+
+# Operator chart (subchart values nested under its alias).
+glassflow-operator:
+  controllerManager:
+    manager:
+      resources:
+        requests: { cpu: 50m,  memory: 64Mi }
+        limits:   { cpu: 500m, memory: 256Mi }
+
+# Notification service — only meaningful if global.notifications.enabled=true.
+notificationService:
+  resources:
+    requests: { cpu: 25m,  memory: 64Mi }
+    limits:   { cpu: 200m, memory: 128Mi }
