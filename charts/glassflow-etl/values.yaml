@@ -231,6 +231,13 @@ ui:
     clientId: ""
     # Auth0 client secret
     clientSecret: ""
+    # Auth0 route paths
+    loginPath: "/api/auth/login"
+    callbackPath: "/api/auth/callback"
+    logoutPath: "/api/auth/logout"
+    # Auth0 social connection names as configured in the Auth0 tenant
+    githubConnection: "github"
+    googleConnection: "google-oauth2"
 
   # Kafka Kerberos Gateway sidecar configuration
   # This sidecar provides Kerberos authentication support for Kafka connections

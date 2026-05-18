@@ -33,6 +33,11 @@ data:
   AUTH0_ISSUER_BASE_URL: "{{ .Values.ui.auth0.issuerBaseUrl }}"
   AUTH0_CLIENT_ID: "{{ .Values.ui.auth0.clientId }}"
   AUTH0_CLIENT_SECRET: "{{ .Values.ui.auth0.clientSecret }}"
+  AUTH0_LOGIN_PATH: "{{ .Values.ui.auth0.loginPath | default "/api/auth/login" }}"
+  AUTH0_CALLBACK_PATH: "{{ .Values.ui.auth0.callbackPath | default "/api/auth/callback" }}"
+  AUTH0_LOGOUT_PATH: "{{ .Values.ui.auth0.logoutPath | default "/api/auth/logout" }}"
+  AUTH0_GITHUB_CONNECTION: "{{ .Values.ui.auth0.githubConnection | default "github" }}"
+  AUTH0_GOOGLE_CONNECTION: "{{ .Values.ui.auth0.googleConnection | default "google-oauth2" }}"
   {{- end }}
   {{- if .Values.ui.kafkaGateway.enabled }}
   KAFKA_GATEWAY_URL: "http://localhost:{{ .Values.ui.kafkaGateway.port }}"
