@@ -62,6 +62,8 @@ data:
         namespace: {{ .Release.Namespace }}
         send_timestamps: true
         enable_open_metrics: true
+        resource_to_telemetry_conversion:
+          enabled: true
   {{- range $name, $cfg := (default dict .Values.global.observability.metrics.extraExporters) }}
       {{ $name }}: {{- toYaml $cfg | nindent 8 }}
   {{- end }}

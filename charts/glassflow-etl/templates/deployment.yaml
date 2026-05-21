@@ -311,6 +311,16 @@ spec:
             - configMapRef:
                 name: glassflow-api-config
           env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.instance.id=$(POD_NAME),service.namespace=$(POD_NAMESPACE)"
             {{- if .Values.postgresql.enabled }}
             - name: GLASSFLOW_DATABASE_URL
               valueFrom:
